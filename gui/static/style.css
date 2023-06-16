@@ -1,0 +1,253 @@
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+}
+
+body > h1 {
+  margin: 1.5rem 0;
+  font-family: Helvetica, sans-serif;
+  color: #333;
+}
+
+#title{
+  width: 400px;
+  position: relative;
+  transform: translate(-122%);
+}
+
+#frame{
+  width: 500px;
+    height: 500px;
+    position: absolute;
+    border: 5px solid;
+    /* background-color: black; */
+    top: 50%;
+    left: 50%;
+    transform: translate(10px, -35%);
+}
+
+
+/*//////////////////////////////MENU/////////////////////////////*/
+#menu_container{
+  position: relative;
+  display: flex;
+  left: 50%;
+  transform: translate(-60%, -1250%);
+}
+
+.menus{
+  font-family: Arial;
+  font-size: 12pt;
+  position:relative;
+  margin: 10px;
+}
+
+.menus select {
+  display: none; /*hide original SELECT element: */
+}
+
+.select-selected {
+  background-color: DodgerBlue;
+}
+
+* Style the arrow inside the select element: */
+.select-selected:after {
+  position: absolute;
+  content: "";
+  top: 14px;
+  right: 10px;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-color: #fff transparent transparent transparent;
+}
+
+.select-selected.select-arrow-active:after {
+  border-color: transparent transparent #fff transparent;
+  top: 7px;
+}
+
+/* style the items (options), including the selected item: */
+.select-items div,.select-selected {
+  color: #ffffff;
+  padding: 8px 16px;
+  background-color: black;
+  border: 1px solid transparent;
+  border-color: transparent transparent rgba(0, 0, 0, 0.1) transparent;
+  cursor: pointer;
+}
+
+/* Style items (options): */
+.select-items {
+  position: absolute;
+  background-color: DodgerBlue;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 99;
+}
+
+/* Hide the items when the select box is closed: */
+.select-hide {
+  display: none;
+}
+
+.select-items div:hover, .same-as-selected {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/*/////////////////////////////FINE MENU//////////////////////////*/
+
+.player {
+  width: 512px;
+  max-width: 512px;
+  position: relative;
+  font-size: 0;
+  overflow: hidden;
+  transform: translate(-80%, -15%);
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 512px;
+}
+
+.controls__btn {
+  background: none;
+  border: 0;
+  line-height: 1;
+  color: white;
+  text-align: center;
+  outline: 0;
+  padding: 0;
+  cursor: pointer;
+  max-width: 50px;
+}
+
+.controls {
+  display: flex;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  flex-wrap: wrap;
+  background: rgb(0 0 0);
+  transform: translateY(0);
+}
+
+.controls > * {
+  flex: 1;
+}
+
+.progress {
+  flex: 10;
+  position: relative;
+  display: flex;
+  flex-basis: 100%;
+  height: 5px;
+  /* background: rgba(0,0,0,0.5); */
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  height: 15px;
+}
+
+.progress__filled {
+  width: 50%;
+  background: #AA5500;
+  flex: 0;
+  flex-basis: 0%;
+}
+
+.label{
+  margin: 10px 10px 10px 10px;
+}
+
+.label-container{
+  position: relative;
+  transform: translate(-50%, -60%);
+  font-family: arial;
+}
+
+.button{
+  margin: 10px 10px 10px 10px;
+  padding: 2px;
+  position: relative;
+  transform: translate(120%);}
+
+/*/////////////////////// SPINNER /////////////////////*/
+div.spinner {
+  height: 60px;
+  width: 60px;
+  top: 45%;
+  left: 45%;
+  position: fixed;
+  border-radius: 50%;
+  border: dashed 5px #000000;
+  animation-name: loader-spin;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+@-webkit-keyframes loader-spin {
+  from   {  transform: rotate(0deg); }
+  to     {  transform: rotate(360deg); }
+}
+/*/////////////////////// FINE SPINNER /////////////////////*/
+
+/*/////////////////////// DROPDOWN_MENU /////////////////////*/
+.dropbtn {
+  background-color: #3498DB;
+  width: 300px;
+  height: 40px;
+  color: white;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.dropbtn:hover, .dropbtn:focus {
+  background-color: #2980B9;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  left: 450px;
+  top: -105px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  width: 300px;
+  overflow: auto;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown a:hover {background-color: #ddd;}
+
+.show {display: block;}
+/*/////////////////////// FINE DROPDOWN_MENU /////////////////////*/
+
+
+
