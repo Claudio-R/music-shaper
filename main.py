@@ -1,6 +1,8 @@
 import yaml
 import sys
 
+#TODO: the main should call the gui, then the gui should call everything else
+
 with open("env.local.yml", "r") as f:
     credentials = yaml.safe_load(f)
     sp_dc = credentials["SP_DC"]
