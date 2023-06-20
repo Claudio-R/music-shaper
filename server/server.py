@@ -6,18 +6,19 @@ from flask_ngrok import run_with_ngrok
 template_folder = '../gui/template'
 static_folder = '../gui/static'
 
-with open('../env.local.yml') as f:
+with open('env.local.yml') as f:
     env = yaml.load(f, Loader=yaml.FullLoader)
-    os.system(f'ngrok authtoken {env["ngrok_token"]}')
-
-app = Flask(__name__, template_folder = template_folder, static_folder = static_folder)
+    cmd = 'ngrok authtoken ' + env['NGROK_AUTHORIZATION_TOKEN']
+    os.system(cmd)
+    
+app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 run_with_ngrok(app)
 
 @app.route("/")
 
 @app.route('/home')
 def home():
-  return render_template('home.html')
+    return render_template('home.html')
 
 @app.route('/process_array', methods=['POST'])
 def process_array():
@@ -26,16 +27,15 @@ def process_array():
     print(array_data)
     response = {'message': 'Array_names ricevuto correttamente'}
 
-    with open("../database/names.txt", "w") as fo:
-      for i in range(0, len(array_data)):
-        print(array_data[i]),
-        print(array_data[i])
-        if i == 0:
-          fo.write(array_data[i] + "&")
-        else:
-          fo.write(array_data[i])
+    with open("./database/names.txt", "w") as fo:
+        for i in range(0, len(array_data)):
+            print(array_data[i]),
+            print(array_data[i])
+            if i == 0:
+                fo.write(array_data[i] + "&")
+            else:
+                fo.write(array_data[i])
     return jsonify(response)
-
 
 @app.route('/process_array_choices', methods=['POST'])
 def process_array_choices():
@@ -44,37 +44,22 @@ def process_array_choices():
 
     response = {'message': 'Array_choices ricevuto correttamente'}
 
-    with open("../database/style.txt", "w") as fo:
-      for j in range(0, len(array_data_choices)):
-        print(array_data_choices[j]),
-        if j == 0 or j == 1:
-          fo.write(array_data_choices[j] + "&")
-        else:
-          fo.write(array_data_choices[j])
+    with open("./database/style.txt", "w") as fo:
+        for j in range(0, len(array_data_choices)):
+            print(array_data_choices[j]),
+            if j == 0 or j == 1:
+                fo.write(array_data_choices[j] + "&")
+            else:
+                fo.write(array_data_choices[j])
     return jsonify(response)
-
-
-@app.route('/setup_system', methods=['POST'])
-def setup_system():
-   print("sono entrato in setup_system")
-    # %run '../source/GenerateLyricsBasedVideo.ipynb'
-
-@app.route('/execute_script', methods=['POST'])
-def execute_script():
-    print("sono entrato in execute_script")
-    # %run '../source/GenerateLyricsBasedVideo.ipynb'
 
 @app.route('/video')
 def get_video():
     print("sono entrato in get_video")
-    # Percorso del video nel server
-    video_path = '../AI/Video/Test.mp4'
+    video_path = './AI/Video/Test.mp4'
 
     while not os.path.exists(video_path):
         # Attendi 1 secondo prima di riprovare
         time.sleep(10)
 
-    # Invia il video al client
     return send_file(video_path, mimetype='video/mp4')
-
-app.run()

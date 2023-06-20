@@ -1,6 +1,34 @@
-import subprocess, time, os, sys
-
 #SECTION - Setup Environment
+
+import subprocess, time, os, sys
+import re, yaml, locale
+import random
+import clip
+from IPython import display
+from types import SimpleNamespace
+
+from helpers.save_images import get_output_folder
+from helpers.settings import load_args
+from helpers.render import render_animation, render_input_video, render_image_batch, render_interpolation
+from helpers.model_load import get_model_output_paths
+from helpers.aesthetics import load_aesthetics_model
+from helpers.prompts import Prompts
+
+import openai
+import time
+import spacy
+nlp = spacy.load("en_core_web_sm")
+
+import nltk
+nltk.download('words')
+
+from nltk.corpus import words
+dictionary = set(words.words())
+
+import mood_prediction
+import source.utils as utils
+import source.youtube_api as youtube_api
+
 sub_p_res = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total,memory.free', '--format=csv,noheader'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
 def setup_environment():
@@ -33,147 +61,77 @@ def setup_environment():
     else:
         sys.path.extend(['src'])
         print("..skipping setup")
-
-setup_environment()
-
-import random
-import clip
-from IPython import display
-from types import SimpleNamespace
-from helpers.save_images import get_output_folder
-from helpers.settings import load_args
-from helpers.render import render_animation, render_input_video, render_image_batch, render_interpolation
-from helpers.model_load import get_model_output_paths
-from helpers.aesthetics import load_aesthetics_model
-from helpers.prompts import Prompts
-
 def PathSetup():
     models_path = "models" #@param {type:"string"}
     configs_path = "configs" #@param {type:"string"}
     output_path = "outputs" #@param {type:"string"}
     mount_google_drive = True #@param {type:"boolean"}
-    models_path_gdrive = "../AI/models" #@param {type:"string"}
-    output_path_gdrive = "../AI/StableDiffusion" #@param {type:"string"}
+    models_path_gdrive = "/AI/models" #@param {type:"string"}
+    output_path_gdrive = "/AI/StableDiffusion" #@param {type:"string"}
     return locals()
-
+    
+setup_environment()
 root = SimpleNamespace(**PathSetup())
 root.models_path, root.output_path = get_model_output_paths(root)
+locale.getpreferredencoding = lambda: "UTF-8"
 
-import numpy as np
-from youtube_transcript_api import YouTubeTranscriptApi
-import requests
-from os import path
-import re;
+artist = ""
+title = ""
+outPath = ""
+image_path = ""
+mp4_path = ""
+audio_path = outPath + "_cut.wav" 
+mp4_final_path = "/AI/Video/Music_cut.mp4"
 
-import openai
-import time
-import spacy
-nlp = spacy.load("en_core_web_sm")
+#!SECTION - Setup Environment
+#SECTION - Settings
 
-import nltk
-nltk.download('words')
+#ANCHOR - Text Processing
+debug_sentence_check = True
+debug_text_processing = True #@param {type:"boolean"}
+remove_meaningless_text = True #@param {type:"boolean"}
+remove_repeated_sentences = True #@param {type:"boolean"}
+specify_time_interval = True #@param {type:"boolean"}
+start_time_sec = 51 #@param {type:"number"}
+end_time_sec = 76 #@param {type:"number"}
+min_words_count_in_sentence = 10 #@param {type:"number"}
 
-from nltk.corpus import words
-dictionary = set(words.words())
+#ANCHOR - Prompts
+debug_generation_prompts = True #@param {type:"boolean"}
+debug_animation_prompts = True #@param {type:"boolean"}
+override_settings_with_file = False # {type:"boolean"}
+settings_file = "custom" # ["custom", "512x512_aesthetic_0.json","512x512_aesthetic_1.json","512x512_colormatch_0.json","512x512_colormatch_1.json","512x512_colormatch_2.json","512x512_colormatch_3.json"]
+custom_settings_file = "settings.txt"# {type:"string"}
 
-import MusicEmotionRecognition
-import SpotifyLyrics
-import Utils
+#ANCHOR - Clip
+skip_video_for_run_all = False #@param {type: 'boolean'}
+use_manual_settings = False #@param {type:"boolean"}
+render_steps = False  #@param {type: 'boolean'}
+make_gif = False
+fps = 10 #@param {type:"number"}
+path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
-def searchSongOnYt(artist, title, needLyrics = True):
-    # Your YouTube Data API v3 key
-    api_key = "AIzaSyBcdBPEmSRGErb2s1gfQ8OEoOBjfEaJBf0"
+#!SECTION - Settings
+#SECTION - Functions
 
-    # The query to search for on YouTube
-    query = artist + " " + title + " lyrics"
-    captionsArg = ""
-    print(query)
+def get_lyrics():
+    # Read from database
+    with open('../server/names.txt') as f:
+        line = f.readline()
+    x = line.split("&")
+    artist, title = x[0], x[1]
 
-    # The URL to search for videoms on YouTube
-    if needLyrics:
-        captionsArg = "&videoCaption=closedCaption"
+    # Get lyrics from Spotify or Youtube
+    lyrics = utils.get_lyrics(artist, title)
+    utils.print_lyrics(lyrics)
 
-    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video{captionsArg}&key={api_key}"
-    print("URL: ", url)
-
-    # Perform the search
-    response = requests.get(url).json()
-
-    #print(response)
-    # Get the first video from the search results
-    video = response["items"][0]
-
-    # Get the video information
-    video_id = video["id"]["videoId"]
-    video_title = video["snippet"]["title"]
-    video_channel = video["snippet"]["channelTitle"]
-
-    # Print the video information
-    print("Video ID:", video_id)
-    print("Title:", video_title)
-    print("Channel:", video_channel)
-
-    return video_id
-
-def getLyricsFromYT(yt_video_id):
-    lyrics = ""
-    try:
-        lyrics = YouTubeTranscriptApi.get_transcript(yt_video_id, languages=['en', 'en-US'])
-    except Exception as e:
-        print(f"Error: {e}")
-
+    # Download the song from YouTube
+    video_id = youtube_api.search_song_on_yt(artist, title, needLyrics = False)
+    link = 'https://www.youtube.com/watch?v=' + video_id
+    outPath = "/content/drive/MyDrive/YT_downloads/{}".format(artist)
+    utils.downloadSongFromYT(link, outPath)
     return lyrics
 
-def printLyrics(lyrics):
-    print("Requested lyrics:")
-    if type(lyrics) == str:
-        print(lyrics)
-    else:
-        for item in lyrics:
-            print(item)
-
-def importLyricsFromFile():
-    return ""
-
-def getLyrics(artist, song):
-    try:
-        lyrics = Utils.search_on_spotify(artist, song)
-    except:
-        print("Exception Occurred in search_on_spotify function: The song has no lyrics or doesn't exist")
-        lyrics=[]
-
-    if not lyrics:
-        id = searchSongOnYt(artist, song)
-        lyrics = getLyricsFromYT(id)
-
-    return lyrics
-
-
-# Retrieve Artist and Song Name from the file
-with open('../server/names.txt') as f:
-    line = f.readline()
-
-x = line.split("&")
-artist = x[0]
-title = x[1]
-
-# Retrieve Lyrics
-lyrics = getLyrics(artist, title)
-printLyrics(lyrics)
-
-# Download the song from YouTube
-video_id = searchSongOnYt(artist, title, needLyrics = False)
-link = 'https://www.youtube.com/watch?v=' + video_id
-print("Link: ", link)
-
-# specify the outputPath without extension
-outPath = "/content/drive/MyDrive/YT_downloads/{}".format(artist)
-Utils.downloadSongFromYT(link, outPath)
-
-#!SECTION
-
-#SECTION - Text Processing
-debug_sentence_check = True #@param {type:"boolean"}
 def is_meaningless_sentence(sentence):
     sentence = sentence.replace(", ", " ")
     words = re.split(r' ', sentence)
@@ -194,89 +152,84 @@ def is_meaningless_sentence(sentence):
     result = nonWordsCount > wordsCount
     return result
 
+def format_lyrics(lyrics):
+    fullText = ""
+    textTimingArrayOriginal = []
+    currentText = ""
 
-debug_text_processing = True #@param {type:"boolean"}
-remove_meaningless_text = True #@param {type:"boolean"}
-remove_repeated_sentences = True #@param {type:"boolean"}
+    for item in lyrics:
+        #remove text with special character ♪
+        item["text"] = re.sub("( )*♪( )*", "", item["text"])
 
-fullText = ""
-textTimingArrayOriginal = []
-currentText = ""
-for item in lyrics:
-    #remove text with special character ♪
-    item["text"] = re.sub("( )*♪( )*", "", item["text"])
+        #remove text in parenthesis
+        item["text"] = re.sub("\[(.*?)\]", "", item["text"])
 
-    #remove text in parenthesis
-    item["text"] = re.sub("\[(.*?)\]", "", item["text"])
+        item["text"] = re.sub("\((.*?)\)", "", item["text"])
 
-    item["text"] = re.sub("\((.*?)\)", "", item["text"])
+        #replace some special characters with spaces
+        item["text"] = item["text"].replace("\n", " ")
 
-    #replace some special characters with spaces
-    item["text"] = item["text"].replace("\n", " ")
+        item["text"] = item["text"].replace(u'\xa0', u' ')
 
-    item["text"] = item["text"].replace(u'\xa0', u' ')
+        #strip text from both ends
+        item["text"] = item["text"].strip()
 
-    #strip text from both ends
-    item["text"] = item["text"].strip()
+        #remove items with empty text
+        if item["text"] == "":
+            del item
+            continue
 
-    #remove items with empty text
-    if item["text"] == "":
-      del item
-      continue
+        #remove meaningless text (if enabled)
+        if remove_meaningless_text:
+            if is_meaningless_sentence(item["text"]):
+                #print("!!!sentence is meaningless and will be removed from the lyrics: " + item["text"])
+                del item
+                continue
 
-    #remove meaningless text (if enabled)
-    if remove_meaningless_text:
-      if is_meaningless_sentence(item["text"]):
-        #print("!!!sentence is meaningless and will be removed from the lyrics: " + item["text"])
-        del item
-        continue
+        #remove repeated sentences (if enabled)
+        if remove_repeated_sentences:
+            if item["text"] == currentText:
+                del item
+                continue
 
-    #remove repeated sentences (if enabled)
-    if remove_repeated_sentences:
-      if item["text"] == currentText:
-        del item
-        continue
+        currentText = item["text"]
+        fullText = fullText + item["text"] + " ";
+        textTimingArrayOriginal.append([str(item["start"]), item["text"]]);
 
-    currentText = item["text"]
-    fullText = fullText + item["text"] + " ";
-    textTimingArrayOriginal.append([str(item["start"]), item["text"]]);
+    fullText = fullText[:-1]
+    return fullText, textTimingArrayOriginal
 
-fullText = fullText[:-1]
+def specify_intervals(textTimingArrayOriginal):
+    textTimingArray =[]
 
-#ANCHOR - Specify Intervals
-specify_time_interval = True #@param {type:"boolean"}
-start_time_sec = 51 #@param {type:"number"}
-end_time_sec = 76 #@param {type:"number"}
-
-textTimingArray =[]
-maxLength = len(textTimingArrayOriginal)
-if specify_time_interval:
-    start_index = 0
-    curItem = textTimingArrayOriginal[start_index]
-
-    while start_index < maxLength and float(curItem[0]) < start_time_sec:
-        start_index += 1
+    maxLength = len(textTimingArrayOriginal)
+    if specify_time_interval:
+        start_index = 0
         curItem = textTimingArrayOriginal[start_index]
-    end_index = maxLength - 1
-    curItem = textTimingArrayOriginal[end_index]
 
-    while end_index >=0 and float(curItem[0]) > end_time_sec:
-        end_index -= 1
+        while start_index < maxLength and float(curItem[0]) < start_time_sec:
+            start_index += 1
+            curItem = textTimingArrayOriginal[start_index]
+        end_index = maxLength - 1
         curItem = textTimingArrayOriginal[end_index]
 
-    assert start_index <= end_index, f"Error: start index > end index! Check the algorithm"
+        while end_index >=0 and float(curItem[0]) > end_time_sec:
+            end_index -= 1
+            curItem = textTimingArrayOriginal[end_index]
 
-    print("End index: ", end_index, "item: ", textTimingArrayOriginal[end_index])
-    textTimingArray = textTimingArrayOriginal[start_index:end_index+1]
+        assert start_index <= end_index, f"Error: start index > end index! Check the algorithm"
 
-else:
-    textTimingArray = textTimingArrayOriginal
+        print("End index: ", end_index, "item: ", textTimingArrayOriginal[end_index])
+        textTimingArray = textTimingArrayOriginal[start_index:end_index+1]
 
-if specify_time_interval:
-    Utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
+    else:
+        textTimingArray = textTimingArrayOriginal
 
-#ANCHOR - Split text into sentences
-min_words_count_in_sentence = 10 #@param {type:"number"}
+    if specify_time_interval:
+        outPath = "/content/drive/MyDrive/YT_downloads/{}".format(artist)
+        utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
+
+    return textTimingArray
 
 def getWordsCount(text):
     # Process the text
@@ -288,9 +241,9 @@ def getWordsCount(text):
             count+=1
     return count
 
-minCount = min_words_count_in_sentence
+def split_lyrics_into_sentences(textTimingArray):
+    minCount = min_words_count_in_sentence
 
-def getSentences(textTimingArray):
     sentence_array = []
     timing_array = []
     curText = ""
@@ -313,61 +266,64 @@ def getSentences(textTimingArray):
 
     return (sentence_array, timing_array)
 
-(sentence_array, timing_array) = getSentences(textTimingArray)
-#!SECTION - Text Processing
+def process_text():
+    '''
+    Only function to be called from outside to process the text
+    '''
+    lyrics = get_lyrics()
+    _, textTimingArrayOriginal = format_lyrics(lyrics)
+    textTimingArray = specify_intervals(textTimingArrayOriginal)
+    sentence_array, timing_array = split_lyrics_into_sentences(textTimingArray)
+    return sentence_array, timing_array
 
-#SECTION - Define the style
-#ANCHOR - Mood Detection
-moods = MusicEmotionRecognition.moods_prediction_finale(artist, title)
-print('Moods: ', moods)
+#ANCHOR - Generate prompts
 
-#ANCHOR - Onset Detection
-fps = 10
-tempo,ts = Utils.get_tempo_ts(artist, title)
-zoom_librosa = Utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
-angles_librosa = Utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
+def get_moods():
+    moods = mood_prediction.predict(artist, title)
+    return moods
 
-#ANCHOR - Retrieve styles from the database
-with open('../server/style.txt') as f:
-    line = f.readline()
-y = line.split("&")
-print(y)
+def get_zoom_angle():
+    fps = 10
+    tempo,ts = utils.get_tempo_ts(artist, title)
+    zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
+    angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
+    return zoom_librosa, angles_librosa
 
-style_1 = y[0]
-style_2 = y[1]
-content_type = y[2]
+def get_style():
+    with open('../server/style.txt') as f:
+        line = f.readline()
+    y = line.split("&")
 
-# content_type = 'Digital paint' #@param ['Image', 'Photograph', 'Painting', 'Sketch', '3D render', 'Digital paint', 'Composition', 'Analog photo'] {type:'string'}
-# style_1 = 'highly detailed'#@param ["realistic" ,"oilpainting", "modern", "cyberpunk", "futuristic", "Surrealist" ,  "trending on artstation",  "matte",  "elegant",  "illustration" , "epic", "beautiful", "dreamy", "colorful", "watercolors", "highly detailed", "grainy", "psychedelic"]
-# style_2 = 'beautiful' #@param ["realistic" ,"oilpainting", "modern", "cyberpunk", "futuristic", "Surrealist" ,  "trending on artstation",  "matte",  "elegant",  "illustration" , "epic", "beautiful", "dreamy", "colorful", "watercolors", "highly detailed", "grainy", "psychedelic"]
-#!SECTION - Define the style
-
-
-#SECTION - Generate prompts
-#ANCHOR - Generate Input prompts
-debug_generation_prompts = True #@param {type:"boolean"}
-
-openai_api_key = "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" #@param {type:"string"}
-openai.api_key = openai_api_key
+    style_1, style_2 = y[0], y[1]
+    content_type = y[2]
+    return style_1, style_2, content_type
 
 def chat_with_chatgpt(prompt):
-  temperature = 1.0
-  max_tokens = 300
+    with open("env.local.yml", 'r') as stream:
+        try:
+            credentials = yaml.safe_load(stream)
+            openai.api_key = credentials['OPENAI_API_KEY']
+        except yaml.YAMLError as exc:
+            print(exc)
 
-  # Generate a response using the OpenAI API
-  response = openai.Completion.create(
-      engine="text-davinci-002",
-      prompt=prompt,
-      temperature=temperature,
-      max_tokens=max_tokens,
-  )
-  answer = response.choices[0].text.strip()
-  return answer
+    temperature = 1.0
+    max_tokens = 300
 
-def generate_prompts(sentence_array, content, style1, style2):
-    c = content
-    s1 = style1
-    s2 = style2
+    # Generate a response using the OpenAI API
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=prompt,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+    answer = response.choices[0].text.strip()
+    return answer
+
+def generate_prompts(sentence_array):
+
+    moods = get_moods()
+    s1, s2, c = get_style()
 
     if debug_generation_prompts:
         print("Desired content: ", c)
@@ -380,22 +336,6 @@ def generate_prompts(sentence_array, content, style1, style2):
         if debug_generation_prompts:
             print("\nCurrent sentence: ", sentence)
 
-        #prompt = "Generate a prompt for a text2image model based on stable diffusion, \
-        #Describing the phrase '" + itm + "' as a " + c +", with style "+ s1 +", " + s2 +".Respecting \
-        #the following order, provide a single output that MUST include (Some examples are provided, \
-        #but the one written at the beginning must be included) : Content type (photograph, drawing, sketch, \
-        #3D render, but INCLUDE THE ONE DEFINED AT THE BEGINNING),  Description (what's happening in the scene, \
-        #in third person, cleary defining the Content as subject, not impersonal form), Art Style and details \
-        #definition (realistic, oilpainting, modern, 3D)."
-        #print("Prompt:"§
-
-        '''prompt = "Generate a CONCISE prompt for a text2image model based on stable diffusion.\
-                With "+ s1 +", " + s2 +" style. The prompt should describe the phrase '" + sentence + "' as a " + c +"\
-                .Respecting the following order, provide a single output phrase that MUST ALWAYS include\
-                : Content type, Description (what's happening in the scene, in third person, cleary defining the Content as subject, \
-                not impersonal form), Art Style and details definition. Respect the form : 'Content of Description in these Styles'.\
-                Don't mention stable diffusion model, but just a prompt that would work with it. Rephrase the input, DON'T repeat it"
-        '''
         prompt = "Generate a CONCISE prompt for a text2image model based on stable diffusion.\
                 With "+ s1 +", " + s2 +" style, expressing a "+ moods[0] +" and "+ moods[1] +" feeling . The prompt should describe the phrase '" + sentence + "' as a " + c +"\
                 .Respecting the following order, provide a single output phrase that MUST ALWAYS include\
@@ -416,42 +356,38 @@ def generate_prompts(sentence_array, content, style1, style2):
     
     return chatgpt_prompts
 
-chatgpt_prompts = generate_prompts(sentence_array, content_type, style_1, style_2)
+def get_animation_prompts(sentence_array, timing_array):
 
-#ANCHOR - Generate Animation Prompts
-debug_animation_prompts = True #@param {type:"boolean"}
+    chatgpt_prompts = generate_prompts(sentence_array)
+    fps=10 #@param {type:"number"}
+    frames_array = []
 
-fps=10 #@param {type:"number"}
-frames_array = []
+    firstTiming = float(timing_array[0])
+    for i in range(len(chatgpt_prompts)):
+        #get frames array
+        curTiming = float(timing_array[i])
+        if specify_time_interval:
+            curTiming -= start_time_sec
 
-firstTiming = float(timing_array[0])
-for i in range(len(chatgpt_prompts)):
-    #get frames array
-    curTiming = float(timing_array[i])
-    if specify_time_interval:
-        curTiming -= start_time_sec
+        frames_array.append(int(curTiming*fps))
+        #do some minor text processing with prompts from chatGPT
+        chatgpt_prompts[i] = chatgpt_prompts[i].replace("\n", " ")
+        chatgpt_prompts[i] = chatgpt_prompts[i].replace(".", " ")
+        chatgpt_prompts[i] = chatgpt_prompts[i].replace("!", " ")
+        chatgpt_prompts[i] = chatgpt_prompts[i].replace(":", " ")
+        chatgpt_prompts[i] = chatgpt_prompts[i].strip()
 
-    frames_array.append(int(curTiming*fps))
-    #do some minor text processing with prompts from chatGPT
-    chatgpt_prompts[i] = chatgpt_prompts[i].replace("\n", " ")
-    chatgpt_prompts[i] = chatgpt_prompts[i].replace(".", " ")
-    chatgpt_prompts[i] = chatgpt_prompts[i].replace("!", " ")
-    chatgpt_prompts[i] = chatgpt_prompts[i].replace(":", " ")
-    chatgpt_prompts[i] = chatgpt_prompts[i].strip()
+    animation_prompts = dict(zip(frames_array, chatgpt_prompts))
 
-animation_prompts = dict(zip(frames_array, chatgpt_prompts))
+    if debug_animation_prompts:
+        print("Frames: \n", frames_array)
+        print("Animation prompts: \n", animation_prompts)
 
-if debug_animation_prompts:
-    print("Frames: \n", frames_array)
-    print("Animation prompts: \n", animation_prompts)
+    neg_prompts = {}
 
-neg_prompts = {}
+    return animation_prompts, neg_prompts, frames_array
 
-#!SECTION - Generate prompts
-
-#SECTION - Generate clip
-#ANCHOR - Settings for Deforum Stable Diffusion
-def DeforumAnimArgs():
+def DeforumAnimArgs(frames_array):
     #@markdown ####**Animation:**
     animation_mode = '2D' #@param ['None', '2D', '3D', 'Video Input', 'Interpolation'] {type:'string'}
     #finish this
@@ -460,8 +396,7 @@ def DeforumAnimArgs():
     if(specify_time_interval):
         max_frames = int((end_time_sec - start_time_sec)*fps)
     #@markdown ####**Motion Parameters:**
-    angle = angles_librosa#@param {type:"string"}
-    zoom = zoom_librosa#@param {type:"string"}
+    zoom, angles = get_zoom_angle()
     translation_x = "0:(2)"#@param {type:"string"}
     translation_y = "0:(2)"#@param {type:"string"}
     translation_z = "0:(0)"#@param {type:"string"}
@@ -542,10 +477,6 @@ def DeforumAnimArgs():
     resume_timestring = "20220829210106" #@param {type:"string"}
 
     return locals()
-
-override_settings_with_file = False # {type:"boolean"}
-settings_file = "custom" # ["custom", "512x512_aesthetic_0.json","512x512_aesthetic_1.json","512x512_colormatch_0.json","512x512_colormatch_1.json","512x512_colormatch_2.json","512x512_colormatch_3.json"]
-custom_settings_file = "/content/drive/MyDrive/Settings.txt"# {type:"string"}
 
 def DeforumArgs():
     #@markdown **Image Settings**
@@ -654,161 +585,153 @@ def DeforumArgs():
     seed_internal = 0
     return locals()
 
+def process_args():
 
-args_dict = DeforumArgs()
-anim_args_dict = DeforumAnimArgs()
+    args_dict = DeforumArgs()
+    anim_args_dict = DeforumAnimArgs()
 
-if override_settings_with_file:
-    load_args(args_dict, anim_args_dict, settings_file, custom_settings_file, verbose=False)
+    if override_settings_with_file:
+        load_args(args_dict, anim_args_dict, settings_file, custom_settings_file, verbose=False)
 
-args = SimpleNamespace(**args_dict)
-anim_args = SimpleNamespace(**anim_args_dict)
+    args = SimpleNamespace(**args_dict)
+    anim_args = SimpleNamespace(**anim_args_dict)
 
-args.timestring = time.strftime('%Y%m%d%H%M%S')
-args.strength = max(0.0, min(1.0, args.strength))
+    args.timestring = time.strftime('%Y%m%d%H%M%S')
+    args.strength = max(0.0, min(1.0, args.strength))
 
-# Load clip model if using clip guidance
-if (args.clip_scale > 0) or (args.aesthetics_scale > 0):
-    root.clip_model = clip.load(args.clip_name, jit=False)[0].eval().requires_grad_(False).to(root.device)
-    if (args.aesthetics_scale > 0):
-        root.aesthetics_model = load_aesthetics_model(args, root)
+    # Load clip model if using clip guidance
+    if (args.clip_scale > 0) or (args.aesthetics_scale > 0):
+        root.clip_model = clip.load(args.clip_name, jit=False)[0].eval().requires_grad_(False).to(root.device)
+        if (args.aesthetics_scale > 0):
+            root.aesthetics_model = load_aesthetics_model(args, root)
 
-if args.seed == -1:
-    args.seed = random.randint(0, 2**32 - 1)
-if not args.use_init:
-    args.init_image = None
-if args.sampler == 'plms' and (args.use_init or anim_args.animation_mode != 'None'):
-    print(f"Init images aren't supported with PLMS yet, switching to KLMS")
-    args.sampler = 'klms'
-if args.sampler != 'ddim':
-    args.ddim_eta = 0
+    if args.seed == -1:
+        args.seed = random.randint(0, 2**32 - 1)
+    if not args.use_init:
+        args.init_image = None
+    if args.sampler == 'plms' and (args.use_init or anim_args.animation_mode != 'None'):
+        print(f"Init images aren't supported with PLMS yet, switching to KLMS")
+        args.sampler = 'klms'
+    if args.sampler != 'ddim':
+        args.ddim_eta = 0
 
-if anim_args.animation_mode == 'None':
-    anim_args.max_frames = 1
-elif anim_args.animation_mode == 'Video Input':
-    args.use_init = True
+    if anim_args.animation_mode == 'None':
+        anim_args.max_frames = 1
+    elif anim_args.animation_mode == 'Video Input':
+        args.use_init = True
 
-#ANCHOR - Frames Generation
-# get prompts
-cond, uncond = Prompts(prompt=animation_prompts).as_dict()
+    return args, anim_args
 
-# dispatch to appropriate renderer
-if anim_args.animation_mode == '2D' or anim_args.animation_mode == '3D':
-    render_animation(root, anim_args, args, cond, uncond)
-elif anim_args.animation_mode == 'Video Input':
-    render_input_video(root, anim_args, args, cond, uncond)
-elif anim_args.animation_mode == 'Interpolation':
-    render_interpolation(root, anim_args, args, cond, uncond)
-else:
-    render_image_batch(root, args, cond, uncond)
+#ANCHOR - Generate Clip
 
-#ANCHOR - Video Generation
-skip_video_for_run_all = False #@param {type: 'boolean'}
-fps = 10 #@param {type:"number"}
-#@markdown **Manual Settings**
-use_manual_settings = False #@param {type:"boolean"}
-image_path = "" #@param {type:"string"}
-mp4_path = "" #@param {type:"string"}
-render_steps = False  #@param {type: 'boolean'}
-path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
-make_gif = False
-bitdepth_extension = "exr" if args.bit_depth_output == 32 else "png"
+def generate_frames(animation_prompts):
+    cond, uncond = Prompts(prompt=animation_prompts).as_dict()
+    args, anim_args = process_args()
 
-if skip_video_for_run_all == True:
-    print('Skipping video creation, uncheck skip_video_for_run_all if you want to run it')
-else:
-    import os
-    import subprocess
-    from base64 import b64encode
-
-    print(f"{image_path} -> {mp4_path}")
-
-    if use_manual_settings:
-        max_frames = "200" #@param {type:"string"}
+    if anim_args.animation_mode == '2D' or anim_args.animation_mode == '3D':
+        render_animation(root, anim_args, args, cond, uncond)
+    elif anim_args.animation_mode == 'Video Input':
+        render_input_video(root, anim_args, args, cond, uncond)
+    elif anim_args.animation_mode == 'Interpolation':
+        render_interpolation(root, anim_args, args, cond, uncond)
     else:
-        if render_steps: # render steps from a single image
-            fname = f"{path_name_modifier}_%05d.png"
-            all_step_dirs = [os.path.join(args.outdir, d) for d in os.listdir(args.outdir) if os.path.isdir(os.path.join(args.outdir,d))]
-            newest_dir = max(all_step_dirs, key=os.path.getmtime)
-            image_path = os.path.join(newest_dir, fname)
-            print(f"Reading images from {image_path}")
-            mp4_path = os.path.join(newest_dir, f"{args.timestring}_{path_name_modifier}.mp4")
-            max_frames = str(args.steps)
-        else: # render images for a video
-            image_path = os.path.join(args.outdir, f"{args.timestring}_%05d.{bitdepth_extension}")
-            mp4_path = os.path.join(args.outdir, f"{args.timestring}.mp4")
-            print("image path: ", image_path)
-            print("mp4_path: ", mp4_path)
-            max_frames = str(anim_args.max_frames)
+        render_image_batch(root, args, cond, uncond)
 
-    # make video
+    if skip_video_for_run_all == True:
+        print("Skipping video generation")
+    else:
+        import os
+        import subprocess
+        from base64 import b64encode
+
+        if use_manual_settings:
+            max_frames = "200" #@param {type:"string"}
+        else:
+            if render_steps: # render steps from a single image
+                fname = f"{path_name_modifier}_%05d.png"
+                all_step_dirs = [os.path.join(args.outdir, d) for d in os.listdir(args.outdir) if os.path.isdir(os.path.join(args.outdir,d))]
+                newest_dir = max(all_step_dirs, key=os.path.getmtime)
+                image_path = os.path.join(newest_dir, fname)
+                mp4_path = os.path.join(newest_dir, f"{args.timestring}_{path_name_modifier}.mp4")
+                max_frames = str(args.steps)
+            else: # render images for a video
+                bitdepth_extension = "exr" if args.bit_depth_output == 32 else "png"
+                image_path = os.path.join(args.outdir, f"{args.timestring}_%05d.{bitdepth_extension}")
+                mp4_path = os.path.join(args.outdir, f"{args.timestring}.mp4")
+                max_frames = str(anim_args.max_frames)
+
+        # make video
+        cmd = [
+            'ffmpeg',
+            '-y',
+            '-vcodec', bitdepth_extension,
+            '-r', str(fps),
+            '-start_number', str(0),
+            #'-i', audio_path,
+            '-i', image_path,
+            '-frames:v', max_frames,
+            '-c:v', 'libx264',
+            '-vf',
+            f'fps={fps}',
+            '-pix_fmt', 'yuv420p',
+            '-crf', '17',
+            '-preset', 'veryfast',
+            '-pattern_type', 'sequence',
+            mp4_path
+        ]
+
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        _, stderr = process.communicate()
+        if process.returncode != 0:
+            print(stderr)
+            raise RuntimeError(stderr)
+
+        mp4 = open(mp4_path,'rb').read()
+        data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
+        display.display(display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
+
+        if make_gif:
+            gif_path = os.path.splitext(mp4_path)[0]+'.gif'
+            cmd_gif = [
+                'ffmpeg',
+                '-y',
+                '-i', mp4_path,
+                '-r', str(fps),
+                gif_path
+            ]
+            process_gif = subprocess.Popen(cmd_gif, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            _, stderr = process_gif.communicate()
+            if process_gif.returncode != 0:
+                print(stderr)
+                raise RuntimeError(stderr)
+            
+def add_audio():
+    # against some strange error we sometimes get:
+    # https://github.com/googlecolab/colabtools/issues/3409
+
     cmd = [
         'ffmpeg',
         '-y',
-        '-vcodec', bitdepth_extension,
-        '-r', str(fps),
-        '-start_number', str(0),
-        #'-i', audio_path,
-        '-i', image_path,
-        '-frames:v', max_frames,
-        '-c:v', 'libx264',
-        '-vf',
-        f'fps={fps}',
-        '-pix_fmt', 'yuv420p',
-        '-crf', '17',
-        '-preset', 'veryfast',
-        '-pattern_type', 'sequence',
-        mp4_path
+        '-i', mp4_path,
+        '-i', audio_path,
+        '-c:a', 'aac',
+        '-b:a', '128k',
+        '-map', '0:v:0',
+        '-map', '1:a:0',
+        '-shortest',
+        mp4_final_path
     ]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     if process.returncode != 0:
         print(stderr)
         raise RuntimeError(stderr)
+    
+#!SECTION - Functions
 
-    mp4 = open(mp4_path,'rb').read()
-    data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
-    display.display(display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
-
-    if make_gif:
-        gif_path = os.path.splitext(mp4_path)[0]+'.gif'
-        cmd_gif = [
-            'ffmpeg',
-            '-y',
-            '-i', mp4_path,
-            '-r', str(fps),
-            gif_path
-        ]
-        process_gif = subprocess.Popen(cmd_gif, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-#ANCHOR - Add Audio
-#against some strange error we sometimes get:
-#https://github.com/googlecolab/colabtools/issues/3409
-
-import locale
-import os
-locale.getpreferredencoding = lambda: "UTF-8"
-audio_path = outPath + "_cut.wav" #"/content/drive/MyDrive/AI/Audio /Eminem_cut.mp3" #@param {type:"string"}
-mp4_final_path = "/content/drive/MyDrive/AI/Video/Music_cut.mp4" #@param {type:"string"}
-
-# run the command : !ffmpeg -i "$mp4_path" -i "$audio_path" -c:a aac -b:a 128k -map 0:v:0 -map 1:a:0 -shortest "$mp4_final_path"
-
-cmd = [
-    'ffmpeg',
-    '-y',
-    '-i', mp4_path,
-    '-i', audio_path,
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-map', '0:v:0',
-    '-map', '1:a:0',
-    '-shortest',
-    mp4_final_path
-]
-process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-if process.returncode != 0:
-    print(stderr)
-    raise RuntimeError(stderr)
-
-#!SECTION - End of the script
+#ANCHOR - Main
+def generate_clip():
+    sentence_array, timing_array = process_text()
+    animation_prompts = get_animation_prompts(sentence_array, timing_array)
+    generate_frames(animation_prompts)
+    add_audio()

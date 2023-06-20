@@ -1,32 +1,36 @@
-
 from __future__ import unicode_literals
 
 import librosa
-import yt_dlp as youtube_dl
 import soundfile as sf
 import numpy as np
 import random
 
-def downloadSongFromYT(url, outPath):
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': outPath,
-        'noplaylist': True,
-        'continue_dl': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'wav',
-            'preferredquality': '192', }]
-    }
-    try:
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.cache.remove()
-            ydl.download([url])
-            return True
-    except Exception as e:
-        print(e)
-        return False 
+from source.spotify_api import search_lyrics_on_spotify
+from source.youtube_api import search_song_on_yt, search_lyrics_on_youtube
 
+def print_lyrics(lyrics):
+    print("Requested lyrics:")
+    if type(lyrics) == str:
+        print(lyrics)
+    else:
+        for item in lyrics:
+            print(item)
+
+def import_lyrics_from_file():
+    return ""
+
+def get_lyrics(artist, song):
+    try:
+        lyrics = search_lyrics_on_spotify(artist, song)
+    except:
+        print("Exception Occurred in search_on_spotify function: The song has no lyrics or doesn't exist")
+        lyrics=[]
+
+    if not lyrics:
+        id = search_song_on_yt(artist, song)
+        lyrics = search_lyrics_on_youtube(id)
+
+    return lyrics
 
 def cutAudio(path, outPath, start, end): 
     y, sr = librosa.load(path)
@@ -74,8 +78,6 @@ def get_onsets_2d(path, sr, norm):
     return sd_list_n
 
 def get_onsets_3d(path, sr, norm): 
-
-
   y, sr = librosa.load(path, sr=sr)
   
   y_n = (y-y.min())/(y.max()-y.min())*(10)
@@ -117,8 +119,6 @@ def get_onsets_3d(path, sr, norm):
 
 # -------------------------------------------------------------------------------------------NOT USED
 def get_onsets_angles(path, sr, norm, delta): 
-
-
   y, sr = librosa.load(path, sr=sr)
   
   y_n = (y-y.min())/(y.max()-y.min())*(-2*delta) + delta

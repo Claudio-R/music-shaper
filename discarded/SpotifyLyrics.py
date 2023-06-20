@@ -106,21 +106,7 @@ def search_for_artist(token, artist_name):
 #AQBrzklc4elr8yh9O7KmGEsN8yLwaq1BQIN-5oqllG0m1ZZUgtGliMsRXhpHcPm4IhYTB4NL8HyZ1JWBg2HM6Zt8RDUEXzgSWytzj4jeAH9wKuxL4iiaC1K-7J_AyZZei3I-ZavpfMfhDrDY2sFapF4YOlKyjmOS
 
 #FINDING SP_DC: https://github.com/akashrchandran/syrics/wiki/Finding-sp_dc 
-def search_on_spotify(artist, song): 
-    token = get_token()
-    print("id printing inside search_on_spotify function")
-    id = search_for_song(token, artist, song)
-    print(id)
-    lrc= sp.get_lyrics(id)
-    if lrc==None:
-        raise Exception("The song has no lyrics or doesn't exist")
-    lyrics = []
 
-    for line in range(len(lrc["lyrics"]['lines'])): 
-        time = int(lrc["lyrics"]['lines'][line]['startTimeMs'])/1000.0
-        words = lrc["lyrics"]['lines'][line]['words']
-        lyrics.append({'text' : words, 'start' : str(time) })
-    return lyrics
 
 if __name__ == '__main__':
     from syrics.api import Spotify

@@ -12,7 +12,7 @@ from sklearn.preprocessing import LabelEncoder,MinMaxScaler
 from sklearn.pipeline import Pipeline
 
 #retrieve auth token - return a base 64 object
-from spotify_client import get_spotify_token, search_for_song_id, get_audio_features_given_song_id
+from source.spotify_api import get_spotify_token, search_for_song_id, get_audio_features_given_song_id
 
 def base_model():
     model = Sequential(
@@ -47,10 +47,10 @@ def define_env():
 
     return pipe, target
 
-def moods_prediction(token, song_id):
+def predict(song_id):
     pipe, target = define_env()
 
-    features = get_audio_features_given_song_id(token, song_id)
+    features = get_audio_features_given_song_id(song_id)
     features = np.array(features).reshape(-1,1).T
     results_prob = pipe.predict_proba(features)
 
@@ -88,9 +88,8 @@ def moods_prediction(token, song_id):
     return final_moods 
 
 if __name__ == "__main__":
-    spotify_token  = get_spotify_token()
     artist = "Brunori Sas"
     song = "Come Stai"
-    song_id = search_for_song_id(spotify_token, artist, song)
-    moods = moods_prediction(spotify_token, song_id)
+    song_id = search_for_song_id(artist, song)
+    moods = predict(song_id)
     print(moods)
