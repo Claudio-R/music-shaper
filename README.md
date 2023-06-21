@@ -10,14 +10,7 @@ Open a colab notebook and clone this repository:
 %cd music-shaper/
 ```
 
-then, install the requirements:
-```
-!pip install -r requirements.txt
-!pip install --force-reinstall https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
-!pip install syrics
-```
-
-and run the main script:
+and run the main script, which will setuo the environment and run the gui:
 ```
 !python main.py
 ```

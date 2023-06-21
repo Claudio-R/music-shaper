@@ -37,10 +37,7 @@ def setup_environment():
     end_time = time.time()
     print(f"..environment set up in {end_time-start_time:.0f} seconds")
 
-from IPython import display
-from types import SimpleNamespace
-
-def PathSetup():
+def setup_paths():
     models_path = "models" #@param {type:"string"}
     configs_path = "configs" #@param {type:"string"}
     output_path = "outputs" #@param {type:"string"}
@@ -58,10 +55,9 @@ from helpers.model_load import get_model_output_paths
 from helpers.aesthetics import load_aesthetics_model
 from helpers.prompts import Prompts
 
-root = SimpleNamespace(**PathSetup())
+root = SimpleNamespace(**setup_paths())
 root.models_path, root.output_path = get_model_output_paths(root)
 locale.getpreferredencoding = lambda: "UTF-8"
-
 
 import openai, clip
 import time
@@ -117,19 +113,20 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 #!SECTION - Settings
 #SECTION - Functions
 
-def get_lyrics():
+def get_lyrics(artist, song):
     # Read from database
-    with open('./database/names.txt') as f:
-        line = f.readline()
-    x = line.split("&")
-    artist, title = x[0], x[1]
+    if artist == "" or song == "":
+        with open('./database/names.txt') as f:
+            line = f.readline()
+        x = line.split("&")
+        artist, song = x[0], x[1]
 
     # Get lyrics from Spotify or Youtube
-    lyrics = utils.get_lyrics(artist, title)
+    lyrics = utils.get_lyrics(artist, song)
     utils.print_lyrics(lyrics)
 
     # Download the song from YouTube
-    video_id = youtube_api.search_song_on_yt(artist, title, needLyrics = False)
+    video_id = youtube_api.search_song_on_yt(artist, song, needLyrics = False)
     link = 'https://www.youtube.com/watch?v=' + video_id
     outPath = "./database/YT_downloads/{}".format(artist)
     utils.downloadSongFromYT(link, outPath)
@@ -269,14 +266,16 @@ def split_lyrics_into_sentences(textTimingArray):
 
     return (sentence_array, timing_array)
 
-def process_text():
-    '''
-    Only function to be called from outside to process the text
-    '''
-    lyrics = get_lyrics()
+def process_lyrics(artist, song):
+    print("Processing lyrics for artist: ", artist, " song: ", song)
+    lyrics = get_lyrics(artist, song)
     _, textTimingArrayOriginal = format_lyrics(lyrics)
     textTimingArray = specify_intervals(textTimingArrayOriginal)
     sentence_array, timing_array = split_lyrics_into_sentences(textTimingArray)
+    
+    print("Lyrics processed successfully!\n")
+    for i in range(len(sentence_array)):
+        print(sentence_array[i], timing_array[i])
     return sentence_array, timing_array
 
 #ANCHOR - Generate prompts
@@ -359,8 +358,9 @@ def generate_prompts(sentence_array):
     
     return chatgpt_prompts
 
-def get_animation_prompts(sentence_array, timing_array):
+def generate_animation_prompts(sentence_array, timing_array):
 
+    print("Generating animation prompts...")
     chatgpt_prompts = generate_prompts(sentence_array)
     fps=10 #@param {type:"number"}
     frames_array = []
@@ -388,7 +388,13 @@ def get_animation_prompts(sentence_array, timing_array):
 
     neg_prompts = {}
 
+    print("Animation prompts generated successfully!\n")
+    for i in range(len(frames_array)):
+        print(frames_array[i], animation_prompts[frames_array[i]])
+
     return animation_prompts, neg_prompts, frames_array
+
+#ANCHOR - Generate Clip
 
 def DeforumAnimArgs(frames_array):
     #@markdown ####**Animation:**
@@ -625,9 +631,9 @@ def process_args():
 
     return args, anim_args
 
-#ANCHOR - Generate Clip
+def generate_clip(animation_prompts):
 
-def generate_frames(animation_prompts):
+    print("Generating clip...")
     cond, uncond = Prompts(prompt=animation_prompts).as_dict()
     args, anim_args = process_args()
 
@@ -707,10 +713,14 @@ def generate_frames(animation_prompts):
             if process_gif.returncode != 0:
                 print(stderr)
                 raise RuntimeError(stderr)
+        
+        print("Done!")
             
 def add_audio():
     # against some strange error we sometimes get:
     # https://github.com/googlecolab/colabtools/issues/3409
+
+    print("Adding audio...")
 
     cmd = [
         'ffmpeg',
@@ -730,11 +740,13 @@ def add_audio():
         print(stderr)
         raise RuntimeError(stderr)
     
+    print("Done!")
+
 #!SECTION - Functions
 
 #ANCHOR - Main
-def generate_clip():
-    sentence_array, timing_array = process_text()
-    animation_prompts = get_animation_prompts(sentence_array, timing_array)
-    generate_frames(animation_prompts)
+def generate_clip(artist, song):
+    sentence_array, timing_array = process_lyrics()
+    animation_prompts = generate_animation_prompts(sentence_array, timing_array)
+    generate_clip(animation_prompts)
     add_audio()
