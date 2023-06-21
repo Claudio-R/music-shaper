@@ -1,8 +1,8 @@
 import yaml
-from source.GenerateLyricsBasedVideo import generate_clip
+from source.clip_generation import generate_clip
 from server.server import app
 
-#TODO: the main should call the gui, then the gui should call everything else
+#TODO: turn it to an object
 
 with open("env.local.yml", "r") as f:
     credentials = yaml.safe_load(f)
