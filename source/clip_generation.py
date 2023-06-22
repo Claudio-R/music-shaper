@@ -37,30 +37,44 @@ def setup_environment():
     end_time = time.time()
     print(f"..environment set up in {end_time-start_time:.0f} seconds")
 
-def setup_paths():
-    models_path = "models" #@param {type:"string"}
-    configs_path = "configs" #@param {type:"string"}
-    output_path = "outputs" #@param {type:"string"}
-    mount_google_drive = True #@param {type:"boolean"}
-    models_path_gdrive = "/AI/models" #@param {type:"string"}
-    output_path_gdrive = "/AI/StableDiffusion" #@param {type:"string"}
-    return locals()
-    
 setup_environment()
 
+import torch
+from IPython import display
+from types import SimpleNamespace
 from helpers.save_images import get_output_folder
 from helpers.settings import load_args
 from helpers.render import render_animation, render_input_video, render_image_batch, render_interpolation
-from helpers.model_load import get_model_output_paths
+from helpers.model_load import make_linear_decode, load_model, get_model_output_paths
 from helpers.aesthetics import load_aesthetics_model
 from helpers.prompts import Prompts
 
-root = SimpleNamespace(**setup_paths())
-root.models_path, root.output_path = get_model_output_paths(root)
-locale.getpreferredencoding = lambda: "UTF-8"
+def PathSetup():
+    models_path = "models" #@param {type:"string"}
+    configs_path = "deforum-stable-diffusion/configs" #@param {type:"string"}
+    output_path = "outputs" #@param {type:"string"}
+    mount_google_drive = False #@param {type:"boolean"}
+    models_path_gdrive = "AI/models" #@param {type:"string"}
+    output_path_gdrive = "AI/StableDiffusion" #@param {type:"string"}
+    return locals()
 
-import openai, clip
-import time
+root = SimpleNamespace(**PathSetup())
+root.models_path, root.output_path = get_model_output_paths(root)
+
+def ModelSetup():
+    map_location = "cuda" #@param ["cpu", "cuda"]
+    model_config = "v1-inference.yaml" #@param ["custom","v2-inference.yaml","v2-inference-v.yaml","v1-inference.yaml"]
+    model_checkpoint =  "Protogen_V2.2.ckpt" #@param ["custom","v2-1_768-ema-pruned.ckpt","v2-1_512-ema-pruned.ckpt","768-v-ema.ckpt","512-base-ema.ckpt","Protogen_V2.2.ckpt","v1-5-pruned.ckpt","v1-5-pruned-emaonly.ckpt","sd-v1-4-full-ema.ckpt","sd-v1-4.ckpt","sd-v1-3-full-ema.ckpt","sd-v1-3.ckpt","sd-v1-2-full-ema.ckpt","sd-v1-2.ckpt","sd-v1-1-full-ema.ckpt","sd-v1-1.ckpt", "robo-diffusion-v1.ckpt","wd-v1-3-float16.ckpt"]
+    custom_config_path = "" #@param {type:"string"}
+    custom_checkpoint_path = "" #@param {type:"string"}
+    return locals()
+
+root.__dict__.update(ModelSetup())
+root.model, root.device = load_model(root, load_on_run_all=True, check_sha256=True, map_location=root.map_location)
+
+locale.getpreferredencoding = lambda: "UTF-8"
+import openai
+import clip, random, time
 import spacy
 nlp = spacy.load("en_core_web_sm")
 
@@ -73,6 +87,7 @@ dictionary = set(words.words())
 import source.mood_prediction as mood_prediction
 import source.utils as utils
 import source.youtube_api as youtube_api
+import source.spotify_api as spotify_api
 
 artist = ""
 song = ""
@@ -80,7 +95,7 @@ outPath = ""
 image_path = ""
 mp4_path = ""
 audio_path = outPath + "_cut.wav" 
-mp4_final_path = "./AI/Video/Music_cut.mp4"
+mp4_final_path = "AI/Video/Music_cut.mp4"
 
 #!SECTION - Setup Environment
 #SECTION - Settings
@@ -114,9 +129,10 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 #SECTION - Functions
 
 def get_lyrics():
+    global artist, song, outPath
     # Read from database
     if artist == "" or song == "":
-        with open('./database/names.txt') as f:
+        with open('database/names.txt') as f:
             line = f.readline()
         x = line.split("&")
         artist, song = x[0], x[1]
@@ -129,7 +145,7 @@ def get_lyrics():
     # Download the song from YouTube
     video_id = youtube_api.search_song_on_yt(artist, song, needLyrics = False)
     link = 'https://www.youtube.com/watch?v=' + video_id
-    outPath = "./database/YT_downloads/{}".format(artist)
+    outPath = "database/YT_downloads/{}".format(artist)
     youtube_api.download_song(link, outPath)
     return lyrics
 
@@ -201,6 +217,9 @@ def format_lyrics(lyrics):
     return fullText, textTimingArrayOriginal
 
 def specify_intervals(textTimingArrayOriginal):
+
+    global artist, outPath
+
     textTimingArray =[]
 
     maxLength = len(textTimingArrayOriginal)
@@ -220,14 +239,13 @@ def specify_intervals(textTimingArrayOriginal):
 
         assert start_index <= end_index, f"Error: start index > end index! Check the algorithm"
 
-        print("End index: ", end_index, "item: ", textTimingArrayOriginal[end_index])
         textTimingArray = textTimingArrayOriginal[start_index:end_index+1]
 
     else:
         textTimingArray = textTimingArrayOriginal
 
     if specify_time_interval:
-        outPath = "./database/YT_downloads/{}".format(artist)
+        outPath = "database/YT_downloads/{}".format(artist)
         utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
 
     return textTimingArray
@@ -244,7 +262,6 @@ def getWordsCount(text):
 
 def split_lyrics_into_sentences(textTimingArray):
     minCount = min_words_count_in_sentence
-
     sentence_array = []
     timing_array = []
     curText = ""
@@ -256,37 +273,45 @@ def split_lyrics_into_sentences(textTimingArray):
         else:
             curText = curText + ", " + item[1]
 
-    wordsCount = getWordsCount(curText)
-    if wordsCount >= minCount:
-        sentence_array.append(curText)
-        timing_array.append(curTiming)
-        curText = ""
-    elif index == len(textTimingArray)-1:
-        sentence_array.append(curText)
-        timing_array.append(curTiming)
+        wordsCount = getWordsCount(curText)
+        if wordsCount >= minCount:
+            sentence_array.append(curText)
+            timing_array.append(curTiming)
+            curText = ""
+        elif index == len(textTimingArray)-1:
+            sentence_array.append(curText)
+            timing_array.append(curTiming)
 
     return (sentence_array, timing_array)
 
-def process_lyrics(artist, song):
-    lyrics = get_lyrics(artist, song)
-    _, textTimingArrayOriginal = format_lyrics(lyrics)
-    textTimingArray = specify_intervals(textTimingArrayOriginal)
-    sentence_array, timing_array = split_lyrics_into_sentences(textTimingArray)
+def process_lyrics():
+    lyrics = get_lyrics()
     
-    print("Lyrics processed successfully!\n")
-    for i in range(len(sentence_array)):
-        print(sentence_array[i], timing_array[i])
+    _, textTimingArrayOriginal = format_lyrics(lyrics)
+    print("\nOriginal lyrics:")
+    utils.print_lyrics(textTimingArrayOriginal)
+
+    textTimingArray = specify_intervals(textTimingArrayOriginal)
+    print("\nLyrics after specifying time interval:")
+    utils.print_lyrics(textTimingArray)
+
+    (sentence_array, timing_array) = split_lyrics_into_sentences(textTimingArray)
+    
+    print("\nLyrics processed successfully!")
+    print("\nFinal lyrics:")
+    utils.print_lyrics(sentence_array)
     return sentence_array, timing_array
 
 #ANCHOR - Generate prompts
 
 def get_moods():
+    global artist, song
     moods = mood_prediction.predict(artist, song)
     return moods
 
 def get_zoom_angle():
-    fps = 10
-    tempo,ts = utils.get_tempo_ts(artist, song)
+    global artist, song, outPath, fps
+    tempo, ts = spotify_api.get_tempo_ts(artist, song)
     zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
     angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
     return zoom_librosa, angles_librosa
@@ -360,9 +385,10 @@ def generate_prompts(sentence_array):
 
 def generate_animation_prompts(sentence_array, timing_array):
 
+    global fps, start_time_sec
+
     print("Generating animation prompts...")
     chatgpt_prompts = generate_prompts(sentence_array)
-    fps=10 #@param {type:"number"}
     frames_array = []
 
     firstTiming = float(timing_array[0])
@@ -388,15 +414,16 @@ def generate_animation_prompts(sentence_array, timing_array):
 
     neg_prompts = {}
 
-    print("Animation prompts generated successfully!\n")
-    for i in range(len(frames_array)):
-        print(frames_array[i], animation_prompts[frames_array[i]])
+    print("\nAnimation prompts generated successfully!")
 
     return animation_prompts, neg_prompts, frames_array
 
 #ANCHOR - Generate Clip
 
 def DeforumAnimArgs(frames_array):
+
+    global specify_time_interval, end_time_sec, start_time_sec, fps
+
     #@markdown ####**Animation:**
     animation_mode = '2D' #@param ['None', '2D', '3D', 'Video Input', 'Interpolation'] {type:'string'}
     #finish this
@@ -405,7 +432,7 @@ def DeforumAnimArgs(frames_array):
     if(specify_time_interval):
         max_frames = int((end_time_sec - start_time_sec)*fps)
     #@markdown ####**Motion Parameters:**
-    zoom, angles = get_zoom_angle()
+    zoom, angle = get_zoom_angle()
     translation_x = "0:(2)"#@param {type:"string"}
     translation_y = "0:(2)"#@param {type:"string"}
     translation_z = "0:(0)"#@param {type:"string"}
@@ -488,6 +515,9 @@ def DeforumAnimArgs(frames_array):
     return locals()
 
 def DeforumArgs():
+
+    global root
+
     #@markdown **Image Settings**
     W = 512 #@param
     H = 512 #@param
@@ -594,10 +624,12 @@ def DeforumArgs():
     seed_internal = 0
     return locals()
 
-def process_args():
+def process_args(frames_array):
+
+    global root, settings_file, custom_settings_file
 
     args_dict = DeforumArgs()
-    anim_args_dict = DeforumAnimArgs()
+    anim_args_dict = DeforumAnimArgs(frames_array)
 
     if override_settings_with_file:
         load_args(args_dict, anim_args_dict, settings_file, custom_settings_file, verbose=False)
@@ -631,11 +663,14 @@ def process_args():
 
     return args, anim_args
 
-def generate_clip(animation_prompts):
+def generate_frames(animation_prompts, frames_array):
+
+    global image_path, mp4_path, root, skip_video_for_run_all, use_manual_settings, render_steps, bitdepth_extension, fps
 
     print("Generating clip...")
+
     cond, uncond = Prompts(prompt=animation_prompts).as_dict()
-    args, anim_args = process_args()
+    args, anim_args = process_args(frames_array)
 
     if anim_args.animation_mode == '2D' or anim_args.animation_mode == '3D':
         render_animation(root, anim_args, args, cond, uncond)
@@ -716,9 +751,12 @@ def generate_clip(animation_prompts):
         
         print("Done!")
             
+#FIXME 
 def add_audio():
     # against some strange error we sometimes get:
     # https://github.com/googlecolab/colabtools/issues/3409
+
+    global mp4_path, mp4_final_path, audio_path
 
     print("Adding audio...")
 
@@ -746,8 +784,9 @@ def add_audio():
 
 #ANCHOR - Main
 def generate_clip(_artist, _song):
+    global artist, song
     artist, song = _artist, _song
     sentence_array, timing_array = process_lyrics()
-    animation_prompts = generate_animation_prompts(sentence_array, timing_array)
-    generate_clip(animation_prompts)
+    animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
+    generate_frames(animation_prompts, frames_array)
     add_audio()

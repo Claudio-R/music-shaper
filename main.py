@@ -26,5 +26,8 @@ if __name__ == "__main__":
         generate_clip("", "")
 
     music_shaper = MusicShaper()
+
+    #TODO - separate setup from execution
+
     music_shaper.generate_clip()
     # music_shaper.run_gui(app)
