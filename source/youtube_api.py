@@ -1,8 +1,12 @@
-import requests
+import requests, yaml
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp as youtube_dl
 
-def search_song_on_yt(api_key, artist, title, needLyrics = True):
+with open("env.local.yml", "r") as f:
+    credentials = yaml.safe_load(f)
+    youtube_api_key = credentials["YOUTUBE_DATA_API_V3_KEY"]
+
+def search_song_on_yt(artist, title, needLyrics = True):
     # The query to search for on YouTube
     query = artist + " " + title + " lyrics"
     captionsArg = ""
@@ -12,7 +16,7 @@ def search_song_on_yt(api_key, artist, title, needLyrics = True):
     if needLyrics:
         captionsArg = "&videoCaption=closedCaption"
 
-    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video{captionsArg}&key={api_key}"
+    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video{captionsArg}&key={youtube_api_key}"
     print("URL: ", url)
 
     # Perform the search
@@ -43,7 +47,7 @@ def search_lyrics_on_youtube(yt_video_id):
 
     return lyrics
 
-def downloadSongFromYT(url, outPath):
+def download_song(url, outPath):
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': outPath,

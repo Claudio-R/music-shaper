@@ -24,8 +24,8 @@ def setup_environment():
     ]
     for package in packages:
         print(f"..installing {package}")
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + package.split())
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', 'https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz'])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q'] + package.split())
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q', '--force-reinstall', 'https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz'])
 
     if not os.path.exists("deforum-stable-diffusion"):
         subprocess.check_call(['git', 'clone', '-b', '0.7.1', 'https://github.com/deforum-art/deforum-stable-diffusion.git'])
@@ -75,7 +75,7 @@ import source.utils as utils
 import source.youtube_api as youtube_api
 
 artist = ""
-title = ""
+song = ""
 outPath = ""
 image_path = ""
 mp4_path = ""
@@ -113,7 +113,7 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 #!SECTION - Settings
 #SECTION - Functions
 
-def get_lyrics(artist, song):
+def get_lyrics():
     # Read from database
     if artist == "" or song == "":
         with open('./database/names.txt') as f:
@@ -122,6 +122,7 @@ def get_lyrics(artist, song):
         artist, song = x[0], x[1]
 
     # Get lyrics from Spotify or Youtube
+    print("Processing lyrics for artist: ", artist, " song: ", song)
     lyrics = utils.get_lyrics(artist, song)
     utils.print_lyrics(lyrics)
 
@@ -129,7 +130,7 @@ def get_lyrics(artist, song):
     video_id = youtube_api.search_song_on_yt(artist, song, needLyrics = False)
     link = 'https://www.youtube.com/watch?v=' + video_id
     outPath = "./database/YT_downloads/{}".format(artist)
-    utils.downloadSongFromYT(link, outPath)
+    youtube_api.download_song(link, outPath)
     return lyrics
 
 def is_meaningless_sentence(sentence):
@@ -267,7 +268,6 @@ def split_lyrics_into_sentences(textTimingArray):
     return (sentence_array, timing_array)
 
 def process_lyrics(artist, song):
-    print("Processing lyrics for artist: ", artist, " song: ", song)
     lyrics = get_lyrics(artist, song)
     _, textTimingArrayOriginal = format_lyrics(lyrics)
     textTimingArray = specify_intervals(textTimingArrayOriginal)
@@ -281,12 +281,12 @@ def process_lyrics(artist, song):
 #ANCHOR - Generate prompts
 
 def get_moods():
-    moods = mood_prediction.predict(artist, title)
+    moods = mood_prediction.predict(artist, song)
     return moods
 
 def get_zoom_angle():
     fps = 10
-    tempo,ts = utils.get_tempo_ts(artist, title)
+    tempo,ts = utils.get_tempo_ts(artist, song)
     zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
     angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
     return zoom_librosa, angles_librosa
@@ -745,7 +745,8 @@ def add_audio():
 #!SECTION - Functions
 
 #ANCHOR - Main
-def generate_clip(artist, song):
+def generate_clip(_artist, _song):
+    artist, song = _artist, _song
     sentence_array, timing_array = process_lyrics()
     animation_prompts = generate_animation_prompts(sentence_array, timing_array)
     generate_clip(animation_prompts)
