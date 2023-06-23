@@ -19,7 +19,7 @@ class MusicShaper():
         app.run()
     
 
-if __name__ == "__main__":
+def main():
     @app.route('/execute_script', methods=['POST'])
     def execute_script():
         print("sono entrato in execute_script")
@@ -28,6 +28,7 @@ if __name__ == "__main__":
     music_shaper = MusicShaper()
 
     #TODO - separate setup from execution
-
-    music_shaper.generate_clip()
+    # music_shaper.generate_clip()
     # music_shaper.run_gui(app)
+
+    return music_shaper

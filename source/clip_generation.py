@@ -8,8 +8,8 @@ from types import SimpleNamespace
 
 sub_p_res = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total,memory.free', '--format=csv,noheader'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
+start_time = time.time()
 def setup_environment():
-    start_time = time.time()
     packages = [
         'triton xformers',
         'einops==0.4.1 pytorch-lightning==1.7.7 torchdiffeq==0.2.3 torchsde==0.2.5',
@@ -19,7 +19,7 @@ def setup_environment():
         'youtube-transcript-api pandas openai PyDictionary',
         'spacy nltk requests',
         'librosa syrics numpy seaborn',
-        'keras tensorflow sklearn',
+        'keras tensorflow',
         'flask_ngrok pyngrok clip'
     ]
     for package in packages:
@@ -34,8 +34,6 @@ def setup_environment():
     with open('deforum-stable-diffusion/src/k_diffusion/__init__.py', 'w') as f:
         f.write('')
     sys.path.extend(['deforum-stable-diffusion/','deforum-stable-diffusion/src',])
-    end_time = time.time()
-    print(f"..environment set up in {end_time-start_time:.0f} seconds")
 
 setup_environment()
 
@@ -94,8 +92,9 @@ song = ""
 outPath = ""
 image_path = ""
 mp4_path = ""
-audio_path = outPath + "_cut.wav" 
-mp4_final_path = "AI/Video/Music_cut.mp4"
+
+end_time = time.time()
+print(f"..environment set up in {end_time-start_time:.0f} seconds")
 
 #!SECTION - Setup Environment
 #SECTION - Settings
@@ -248,6 +247,8 @@ def specify_intervals(textTimingArrayOriginal):
         outPath = "database/YT_downloads/{}".format(artist)
         utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
 
+    print("OUTPATH: ", outPath)
+
     return textTimingArray
 
 def getWordsCount(text):
@@ -288,13 +289,7 @@ def process_lyrics():
     lyrics = get_lyrics()
     
     _, textTimingArrayOriginal = format_lyrics(lyrics)
-    print("\nOriginal lyrics:")
-    utils.print_lyrics(textTimingArrayOriginal)
-
     textTimingArray = specify_intervals(textTimingArrayOriginal)
-    print("\nLyrics after specifying time interval:")
-    utils.print_lyrics(textTimingArray)
-
     (sentence_array, timing_array) = split_lyrics_into_sentences(textTimingArray)
     
     print("\nLyrics processed successfully!")
@@ -711,7 +706,6 @@ def generate_frames(animation_prompts, frames_array):
             '-vcodec', bitdepth_extension,
             '-r', str(fps),
             '-start_number', str(0),
-            #'-i', audio_path,
             '-i', image_path,
             '-frames:v', max_frames,
             '-c:v', 'libx264',
@@ -750,15 +744,22 @@ def generate_frames(animation_prompts, frames_array):
                 raise RuntimeError(stderr)
         
         print("Done!")
+        print("MP4: ", mp4_path)
+        print("IMAGE: ", image_path)
+
             
 #FIXME 
 def add_audio():
     # against some strange error we sometimes get:
     # https://github.com/googlecolab/colabtools/issues/3409
 
-    global mp4_path, mp4_final_path, audio_path
+    global mp4_path, outPath
+
+    audio_path = outPath + "_cut.wav" 
+    mp4_final_path = "AI/Video/Music_cut.mp4"
 
     print("Adding audio...")
+    print("AUDIO: ", audio_path)
 
     cmd = [
         'ffmpeg',
@@ -772,6 +773,7 @@ def add_audio():
         '-shortest',
         mp4_final_path
     ]
+    
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     if process.returncode != 0:
