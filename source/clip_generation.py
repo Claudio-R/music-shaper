@@ -322,10 +322,10 @@ def get_style():
             line = f.readline()
         y = line.split("&")
 
-        style_1, style_2 = y[0], y[1]
+        style1, style2 = y[0], y[1]
         content = y[2]
 
-    return style_1, style_2, content
+    return style1, style2, content
 
 def chat_with_chatgpt(prompt):
     with open("env.local.yml", 'r') as stream:
