@@ -789,11 +789,11 @@ def add_audio():
 def generate_clip(config):
     global artist, song, style1, style2, content
     if config != None:
-        artist = config.artist
-        song = config.song
-        style1 = config.style1
-        style2 = config.style2
-        content = config.content
+        artist = config["artist"]
+        song = config["song"]
+        style1 = config["style1"]
+        style2 = config["style2"]
+        content = config["content"]
 
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
