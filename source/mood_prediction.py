@@ -47,7 +47,8 @@ def define_env():
 
     return pipe, target
 
-def predict(song_id):
+def predict(artist, song):
+    song_id = search_for_song_id(artist, song)
     pipe, target = define_env()
 
     features = get_audio_features_given_song_id(song_id)
