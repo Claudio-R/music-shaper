@@ -247,8 +247,6 @@ def specify_intervals(textTimingArrayOriginal):
         outPath = "database/YT_downloads/{}".format(artist)
         utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
 
-    print("OUTPATH: ", outPath)
-
     return textTimingArray
 
 def getWordsCount(text):
@@ -382,7 +380,6 @@ def generate_animation_prompts(sentence_array, timing_array):
 
     global fps, start_time_sec
 
-    print("Generating animation prompts...")
     chatgpt_prompts = generate_prompts(sentence_array)
     frames_array = []
 
@@ -408,9 +405,6 @@ def generate_animation_prompts(sentence_array, timing_array):
         print("Animation prompts: \n", animation_prompts)
 
     neg_prompts = {}
-
-    print("\nAnimation prompts generated successfully!")
-
     return animation_prompts, neg_prompts, frames_array
 
 #ANCHOR - Generate Clip
@@ -662,8 +656,6 @@ def generate_frames(animation_prompts, frames_array):
 
     global image_path, mp4_path, root, skip_video_for_run_all, use_manual_settings, render_steps, bitdepth_extension, fps
 
-    print("Generating clip...")
-
     cond, uncond = Prompts(prompt=animation_prompts).as_dict()
     args, anim_args = process_args(frames_array)
 
@@ -743,12 +735,11 @@ def generate_frames(animation_prompts, frames_array):
                 print(stderr)
                 raise RuntimeError(stderr)
         
-        print("Done!")
-        print("MP4: ", mp4_path)
-        print("IMAGE: ", image_path)
+        # print("Done!")
+        # print("MP4: ", mp4_path)
+        # print("IMAGE: ", image_path)
 
-            
-#FIXME 
+
 def add_audio():
     # against some strange error we sometimes get:
     # https://github.com/googlecolab/colabtools/issues/3409
@@ -758,8 +749,8 @@ def add_audio():
     audio_path = outPath + "_cut.wav" 
     mp4_final_path = "AI/Video/Music_cut.mp4"
 
-    print("Adding audio...")
-    print("AUDIO: ", audio_path)
+    # print("Adding audio...")
+    # print("AUDIO: ", audio_path)
 
     cmd = [
         'ffmpeg',
@@ -781,6 +772,7 @@ def add_audio():
         raise RuntimeError(stderr)
     
     print("Done!")
+    print("Find video at: ", mp4_final_path)
 
 #!SECTION - Functions
 

@@ -6,6 +6,11 @@ with open("env.local.yml", "r") as f:
     credentials = yaml.safe_load(f)
     sp_dc = credentials["SP_DC"]
 
+@app.route('/execute_script', methods=['POST'])
+def execute_script():
+    print("sono entrato in execute_script")
+    generate_clip("", "")
+
 class MusicShaper():
     def __init__(self) -> None:
         pass
@@ -20,11 +25,6 @@ class MusicShaper():
     
 
 def main():
-    @app.route('/execute_script', methods=['POST'])
-    def execute_script():
-        print("sono entrato in execute_script")
-        generate_clip("", "")
-
     music_shaper = MusicShaper()
 
     #TODO - separate setup from execution
