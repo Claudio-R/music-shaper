@@ -16,9 +16,14 @@ class MusicShaper():
         pass
 
     def generate_clip(self) -> None:
-        artist = input("Insert artist: ")
-        song = input("Insert song: ")
-        generate_clip(artist, song)
+        config = {
+            'artist': input("Insert artist: "),
+            'song': input("Insert song: "),
+            'style1': input("Insert main style: "),
+            'style2': input("Insert secondary style: "),
+            'content': input("Insert content: ")
+        }
+        generate_clip(config)
 
     def run_gui(self, app) -> None:
         app.run()

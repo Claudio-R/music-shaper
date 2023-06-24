@@ -168,89 +168,62 @@ def get_onsets_angles(path, sr, norm, delta):
   return sd_list_n
 
 def get_beats_librosa_zoom(path, sr, tempo, ts): 
-  y, sr_x = librosa.load(path)
+    y, sr_x = librosa.load(path)
+    tempo, beats =  librosa.beat.beat_track(y=y, sr=sr_x, bpm = tempo)
+    beats_times = librosa.frames_to_time(beats)
+    y_d, sr_d = librosa.load(path, sr = sr)
+    ts_fs = 1/sr_d
   
-  #onset_envelope = librosa.onset.onset_strength(y=y, sr=sr_x)
-  
-  #onsets = librosa.onset.onset_detect(onset_envelope=onset_envelope)
-  tempo, beats =  librosa.beat.beat_track(y=y, sr=sr_x, bpm = tempo)
-  beats_times = librosa.frames_to_time(beats)
-  y_d, sr_d = librosa.load(path, sr = sr)
-  ts_fs = 1/sr_d
-  
-  array_fs = np.arange(0, len(y_d)*ts_fs, ts_fs)
-  #print('ar', array_fs)
-  new_beats = []
-  tc = 0 
-  for i in range(len(array_fs)): 
+    array_fs = np.arange(0, len(y_d)*ts_fs, ts_fs)
+    new_beats = []
+    tc = 0 
 
-    if(i<len(array_fs) -2 ): 
+    for i in range(len(array_fs)): 
+        if(i<len(array_fs) -2 ): 
+            while((beats_times[tc] > array_fs[i] and beats_times[tc] < array_fs[i+1]) and (tc < beats_times.size - 1 )): 
+                if((tc+1)%ts==0):
+                    new_beats.append(i)
+                tc = tc +1
 
-      while((beats_times[tc] > array_fs[i] and beats_times[tc] < array_fs[i+1]) and (tc < beats_times.size - 1 )): 
-        if((tc+1)%ts==0):
-          new_beats.append(i)
-          #print('bt', beats_times[tc])
-        #same values may be present
-        #controllo su length di onset times !!!! 
-          #if((beats_times[tc] > array_fs[i] + ts_fs/2) and (beats_times[tc] < array_fs[i] + ts_fs)): 
-          #  new_beats.append(i)
-          #elif((beats_times[tc] > array_fs[i]) and (beats_times[tc] < array_fs[i] + ts_fs/2)): 
-          #  new_beats.append(i+1)
-        tc = tc +1
+    sd_list_n = ""
+    beats_ar = np.full(len(array_fs), 1.0)
 
-  #print(new_beats)
-  sd_list_n = ""
-  beats_ar = np.full(len(array_fs), 1.0)
+    for i in range(len(beats_ar)): 
+        for b in new_beats:
+            if(i == b): 
+                beats_ar[i] = random.uniform(1.0, 2.0)
 
-  for i in range(len(beats_ar)): 
-    for b in new_beats:
-      if(i == b): 
-        beats_ar[i] = random.uniform(1.0, 2.0)
-
-    for i in range(len(beats_ar)) :
-        if(i != len(beats_ar) -1  ):       
+    for i in range(len(beats_ar)):
+        if(i != len(beats_ar) -1  ):     
             if(beats_ar[i+1] != 1.0 ): 
                 sd_list_n = sd_list_n + str(i) + ":(" + str(beats_ar[i+1]-0.1) +"), "
             else: 
                 sd_list_n = sd_list_n + str(i) + ":("+ str(beats_ar[i]) +"), "
         else: 
             sd_list_n = sd_list_n + str(i) + ":("+ str(beats_ar[i]) +")"
-
+    
     return sd_list_n
 
+
 def get_beats_librosa_angle(path, sr, tempo, ts): 
-  y, sr_x = librosa.load(path)
+    y, sr_x = librosa.load(path)
+    tempo, beats =  librosa.beat.beat_track(y=y, sr=sr_x, bpm = tempo)
+    beats_times = librosa.frames_to_time(beats)
   
-  #onset_envelope = librosa.onset.onset_strength(y=y, sr=sr_x)
+    y_d, sr_d = librosa.load(path, sr = sr)
   
-  #onsets = librosa.onset.onset_detect(onset_envelope=onset_envelope)
-  tempo, beats =  librosa.beat.beat_track(y=y, sr=sr_x, bpm = tempo)
-  beats_times = librosa.frames_to_time(beats)
+    ts_fs = 1/sr_d
   
-  y_d, sr_d = librosa.load(path, sr = sr)
-  
-  ts_fs = 1/sr_d
-  
-  array_fs = np.arange(0, len(y_d)*ts_fs, ts_fs)
-  #print('ar', array_fs)
-  new_beats = []
-  tc = 0 
-  #print(beats_times)
-  for i in range(len(array_fs)): 
+    array_fs = np.arange(0, len(y_d)*ts_fs, ts_fs)
+    new_beats = []
+    tc = 0 
 
-    if(i<len(array_fs) -2 ): 
-
-      while((beats_times[tc] > array_fs[i] and beats_times[tc] < array_fs[i+1]) and (tc < beats_times.size - 1 )): 
-        #same values may be present
-        #controllo su length di onset times !!!! 
-        if((tc+1)%ts==0):
-            new_beats.append(i)
-          #if((beats_times[tc] > array_fs[i] + ts_fs/2) and (beats_times[tc] < array_fs[i] + ts_fs)): 
-          #  new_beats.append(i)
-          #elif((beats_times[tc] > array_fs[i]) and (beats_times[tc] < array_fs[i] + ts_fs/2)): 
-          #  new_beats.append(i+1)
-        tc = tc +1
-  #print(new_beats)
+    for i in range(len(array_fs)): 
+        if(i<len(array_fs) -2 ): 
+            while((beats_times[tc] > array_fs[i] and beats_times[tc] < array_fs[i+1]) and (tc < beats_times.size - 1 )): 
+                if((tc+1)%ts==0):
+                    new_beats.append(i)
+                tc = tc +1
     sd_list_n = ""
     beats_ar = np.full(len(array_fs), 0)
 
@@ -258,11 +231,13 @@ def get_beats_librosa_angle(path, sr, tempo, ts):
         for b in new_beats:
             if(i == b): 
                 beats_ar[i] = random.randint(-30, 30)
-
+    
     for i in range(len(beats_ar)) :
         if(i != len(beats_ar) -1  ): 
+      
             sd_list_n = sd_list_n + str(i) + ":("+ str(beats_ar[i]) +"), "
         else: 
             sd_list_n = sd_list_n + str(i) + ":("+ str(beats_ar[i]) +")"
+    
     return sd_list_n
 
