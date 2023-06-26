@@ -89,6 +89,10 @@ import source.spotify_api as spotify_api
 
 artist = ""
 song = ""
+style1 = ""
+style2 = ""
+content = ""
+
 outPath = ""
 image_path = ""
 mp4_path = ""
@@ -307,16 +311,21 @@ def get_zoom_angle():
     tempo, ts = spotify_api.get_tempo_ts(artist, song)
     zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
     angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
+    print("zoom_librosa: ", zoom_librosa)
+    print("angles_librosa: ", angles_librosa)
     return zoom_librosa, angles_librosa
 
 def get_style():
-    with open('./database/style.txt') as f:
-        line = f.readline()
-    y = line.split("&")
+    global style1, style2, content
+    if style1 == "" or style2 == "" or content == "":
+        with open('./database/style.txt') as f:
+            line = f.readline()
+        y = line.split("&")
 
-    style_1, style_2 = y[0], y[1]
-    content_type = y[2]
-    return style_1, style_2, content_type
+        style1, style2 = y[0], y[1]
+        content = y[2]
+
+    return style1, style2, content
 
 def chat_with_chatgpt(prompt):
     with open("env.local.yml", 'r') as stream:
@@ -422,9 +431,9 @@ def DeforumAnimArgs(frames_array):
         max_frames = int((end_time_sec - start_time_sec)*fps)
     #@markdown ####**Motion Parameters:**
     zoom, angle = get_zoom_angle()
-    translation_x = "0:(2)"#@param {type:"string"}
-    translation_y = "0:(2)"#@param {type:"string"}
-    translation_z = "0:(0)"#@param {type:"string"}
+    translation_x = "0:(0)"#@param {type:"string"}
+    translation_y = "0:(0)"#@param {type:"string"}
+    translation_z = "0:(1)"#@param {type:"string"}
     rotation_3d_x = "0:(0)"#@param {type:"string"}
     rotation_3d_y = "0:(0)"#@param {type:"string"}
     rotation_3d_z = "0:(0)"#@param {type:"string"}
@@ -777,9 +786,15 @@ def add_audio():
 #!SECTION - Functions
 
 #ANCHOR - Main
-def generate_clip(_artist, _song):
-    global artist, song
-    artist, song = _artist, _song
+def generate_clip(config):
+    global artist, song, style1, style2, content
+    if config != None:
+        artist = config["artist"]
+        song = config["song"]
+        style1 = config["style1"]
+        style2 = config["style2"]
+        content = config["content"]
+
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
     generate_frames(animation_prompts, frames_array)
