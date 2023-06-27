@@ -2,16 +2,27 @@ from flask.templating import render_template
 from flask import Flask, request, jsonify, send_file
 import os, time, yaml
 from flask_ngrok import run_with_ngrok
+from source.clip_generation import generate_clip
 
-template_folder = 'gui/template'
-static_folder = 'gui/static'
+try:
+    with open('env.local.yml') as f:
+        try:
+            env = yaml.load(f, Loader=yaml.FullLoader)
+            cmd = 'ngrok authtoken ' + env['NGROK_AUTHORIZATION_TOKEN']
+            os.system(cmd)
+        except yaml.YAMLError as exc:
+            print(exc)
+except FileNotFoundError:
+    input("Insert a valid env.local.yml file and press enter...")
+    with open('env.local.yml') as f:
+        try:
+            env = yaml.load(f, Loader=yaml.FullLoader)
+            cmd = 'ngrok authtoken ' + env['NGROK_AUTHORIZATION_TOKEN']
+            os.system(cmd)
+        except yaml.YAMLError as exc:
+            print(exc)
 
-with open('env.local.yml') as f:
-    env = yaml.load(f, Loader=yaml.FullLoader)
-    cmd = 'ngrok authtoken ' + env['NGROK_AUTHORIZATION_TOKEN']
-    os.system(cmd)
-    
-app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+app = Flask(__name__, template_folder='gui/template', static_folder='gui/static')
 run_with_ngrok(app)
 
 @app.route("/")
@@ -20,9 +31,8 @@ run_with_ngrok(app)
 def home():
     return render_template('home.html')
 
-@app.route('/process_array', methods=['POST'])
+@app.route('/process_artist_song', methods=['POST'])
 def process_array():
-    
     data = request.get_json()
     array_data = data.get('arrayData')
 
@@ -34,21 +44,25 @@ def process_array():
                     fo.write(array_data[i] + "&")
                 else:
                     fo.write(array_data[i])
-        return jsonify({
+        response = jsonify({
             'message': 'Array_names retrieve successfully',
             'status': 200
             })
     except Exception as e:
         print(e)
-        return jsonify({
+        response = jsonify({
             'message': 'Error while retrieving array_names',
             'status': 500
             })
     
-@app.route('/process_array_choices', methods=['POST'])
+    print(response)
+    return response
+
+@app.route('/process_style_content', methods=['POST'])
 def process_array_choices():
-    data_choices = request.get_json()  # ottieni i dati JSON dal corpo della richiesta
-    array_data_choices = data_choices.get('arrayDataChoices')  # ottieni la stringa dal campo "stringData"
+    data_choices = request.get_json()
+    array_data_choices = data_choices.get('arrayDataChoices')
+    
     try:
         with open("./database/style.txt", "w") as fo:
             for j in range(0, len(array_data_choices)):
@@ -58,35 +72,59 @@ def process_array_choices():
                 else:
                     fo.write(array_data_choices[j])
 
-        return jsonify({
+        response = jsonify({
             'message': 'Array_styles retrieve successfully',
             'status': 200
             })
     except Exception as e:
         print(e)
-        return jsonify({
+        response = jsonify({
             'message': 'Error while retrieving array_styles',
             'status': 500
-            })    
+            })  
+        
+    print(response)
+    return response      
 
-@app.route('/video')
+@app.route('/execute_script', methods=['POST'])
+def execute_script():
+    print("sono entrato in execute_script")
+    
+    try:
+        generate_clip(None)
+        response = jsonify({
+            'message': 'Clip generated successfully',
+            'status': 200,
+            })
+    except Exception as e:
+        print(e)
+        response = jsonify({
+            'message': 'Error while generating clip',
+            'status': 500
+            })
+        
+    print(response)
+    return response
+
+@app.route('/get_video')
 def get_video():
-    print("sono entrato in get_video")
     video_path = 'AI/Video/Music_cut.mp4'
-
     while not os.path.exists(video_path):
         print("Path does not exist")
         time.sleep(10)
 
     try:
         send_file(video_path, mimetype='video/mp4')
-        return jsonify({
+        response = jsonify({
             'message': 'Video retrieved successfully',
             'status': 200
             })
     except Exception as e:
         print(e)
-        return jsonify({
+        response = jsonify({
             'message': 'Error while retrieving video',
             'status': 500
             })
+        
+    print(response)
+    return response

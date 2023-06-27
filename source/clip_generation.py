@@ -310,12 +310,21 @@ def get_zoom_angle():
     return zoom_librosa, angles_librosa
 
 def chat_with_chatgpt(prompt):
-    with open("env.local.yml", 'r') as stream:
-        try:
-            credentials = yaml.safe_load(stream)
-            openai.api_key = credentials['OPENAI_API_KEY']
-        except yaml.YAMLError as exc:
-            print(exc)
+    try:
+        with open("env.local.yml", 'r') as stream:
+            try:
+                credentials = yaml.safe_load(stream)
+                openai.api_key = credentials['OPENAI_API_KEY']
+            except yaml.YAMLError as exc:
+                print(exc)
+    except FileNotFoundError:
+        input("Insert a valid env.local.yml file and press enter...")
+        with open("env.local.yml", 'r') as stream:
+            try:
+                credentials = yaml.safe_load(stream)
+                openai.api_key = credentials['OPENAI_API_KEY']
+            except yaml.YAMLError as exc:
+                print(exc)
 
     temperature = 1.0
     max_tokens = 300

@@ -2,9 +2,21 @@ import requests, yaml
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp as youtube_dl
 
-with open("env.local.yml", "r") as f:
-    credentials = yaml.safe_load(f)
-    youtube_api_key = credentials["YOUTUBE_DATA_API_V3_KEY"]
+try:
+    with open("env.local.yml", "r") as f:
+        try:
+            credentials = yaml.safe_load(f)
+            youtube_api_key = credentials["YOUTUBE_DATA_API_V3_KEY"]
+        except yaml.YAMLError as exc:
+            print(exc)
+except FileNotFoundError:
+    input("Insert a valid env.local.yml file and press enter...")
+    with open("env.local.yml", "r") as f:
+        try:
+            credentials = yaml.safe_load(f)
+            youtube_api_key = credentials["YOUTUBE_DATA_API_V3_KEY"]
+        except yaml.YAMLError as exc:
+            print(exc)
 
 def search_song_on_yt(artist, title, needLyrics = True):
     # The query to search for on YouTube

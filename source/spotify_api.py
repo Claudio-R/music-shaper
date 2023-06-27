@@ -3,15 +3,26 @@ from requests import post, get
 import yaml
 import json
 
-with open("env.local.yml", 'r') as stream:
-    try:
-        credentials = yaml.safe_load(stream)
-        client_id = credentials['CLIENT_ID']
-        client_secret = credentials['CLIENT_SECRET']
-        sp_dc = credentials['SP_DC']
-    except yaml.YAMLError as exc:
-        print(exc)
-
+try:
+    with open("env.local.yml", 'r') as stream:
+        try:
+            credentials = yaml.safe_load(stream)
+            client_id = credentials['CLIENT_ID']
+            client_secret = credentials['CLIENT_SECRET']
+            sp_dc = credentials['SP_DC']
+        except yaml.YAMLError as exc:
+            print(exc)
+except FileNotFoundError:
+    input("Insert a valid env.local.yml file and press enter...")
+    with open("env.local.yml", 'r') as stream:
+        try:
+            credentials = yaml.safe_load(stream)
+            client_id = credentials['CLIENT_ID']
+            client_secret = credentials['CLIENT_SECRET']
+            sp_dc = credentials['SP_DC']
+        except yaml.YAMLError as exc:
+            print(exc)
+    
 def get_spotify_token() -> str:
     auth_string = f"{client_id}:{client_secret}"
     auth_bytes = auth_string.encode("utf-8")
