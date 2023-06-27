@@ -387,13 +387,13 @@ def generate_animation_prompts(sentence_array, timing_array):
 
     firstTiming = float(timing_array[0])
     for i in range(len(chatgpt_prompts)):
-        #get frames array
+        # get frames array
         curTiming = float(timing_array[i])
         if specify_time_interval:
             curTiming -= start_time_sec
 
         frames_array.append(int(curTiming*fps))
-        #do some minor text processing with prompts from chatGPT
+        # do some minor text processing with prompts from chatGPT
         chatgpt_prompts[i] = chatgpt_prompts[i].replace("\n", " ")
         chatgpt_prompts[i] = chatgpt_prompts[i].replace(".", " ")
         chatgpt_prompts[i] = chatgpt_prompts[i].replace("!", " ")

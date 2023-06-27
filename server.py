@@ -112,17 +112,7 @@ def get_video():
         time.sleep(10)
 
     try:
-        send_file(video_path, mimetype='video/mp4')
-        response = jsonify({
-            'message': 'Video retrieved successfully',
-            'status': 200
-            })
+        return send_file(video_path, mimetype='video/mp4')
     except Exception as e:
         print(e)
-        response = jsonify({
-            'message': 'Error while retrieving video',
-            'status': 500
-            })
         
-    print(response)
-    return response
