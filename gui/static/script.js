@@ -162,7 +162,7 @@ progress.addEventListener("mouseup", () => (mousedown = false));
 function eseguiScript() {
   console.log("sono entrato in eseguiScript()");
   //getVideo();
-  /*
+  
   try {
     const response = fetch('/execute_script', {
       method: 'POST',
@@ -184,7 +184,7 @@ function eseguiScript() {
   } catch (error) {
     // Gestisci gli errori di rete o altre eccezioni
     console.error('Errore:', error);
-  }*/
+  }
 };
 
 

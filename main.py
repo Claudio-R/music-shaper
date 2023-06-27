@@ -10,7 +10,7 @@ class MusicShaper():
     def __init__(self) -> None:
         pass
 
-    def generate_clip(self) -> None:
+    def generate_video(self) -> None:
         config = {
             'artist': input("Insert artist: "),
             'song': input("Insert song: "),

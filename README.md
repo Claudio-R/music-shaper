@@ -19,7 +19,7 @@ music_shaper = MusicShaper()
 ```
 It is possible to use the `music_shaper` object to generate your own videoclips directly from the command line with:
 ```
-music_shaper.generate_clip()
+music_shaper.generate_video()
 ```
 Otherwise, it is possible to start the gui with:
 ```
