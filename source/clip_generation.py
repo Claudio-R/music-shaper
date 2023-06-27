@@ -133,12 +133,6 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
 def get_lyrics():
     global artist, song, outPath
-    # Read from database
-    if artist == "" or song == "":
-        with open('database/names.txt') as f:
-            line = f.readline()
-        x = line.split("&")
-        artist, song = x[0], x[1]
 
     # Get lyrics from Spotify or Youtube
     print("Processing lyrics for artist: ", artist, " song: ", song)
@@ -315,18 +309,6 @@ def get_zoom_angle():
     print("angles_librosa: ", angles_librosa)
     return zoom_librosa, angles_librosa
 
-def get_style():
-    global style1, style2, content
-    if style1 == "" or style2 == "" or content == "":
-        with open('./database/style.txt') as f:
-            line = f.readline()
-        y = line.split("&")
-
-        style1, style2 = y[0], y[1]
-        content = y[2]
-
-    return style1, style2, content
-
 def chat_with_chatgpt(prompt):
     with open("env.local.yml", 'r') as stream:
         try:
@@ -351,8 +333,10 @@ def chat_with_chatgpt(prompt):
 
 def generate_prompts(sentence_array):
 
+    global style1, style2, content
+
     moods = get_moods()
-    s1, s2, c = get_style()
+    s1, s2, c = style1, style2, content
 
     if debug_generation_prompts:
         print("Desired content: ", c)
@@ -794,6 +778,15 @@ def generate_clip(config):
         style1 = config["style1"]
         style2 = config["style2"]
         content = config["content"]
+    else:
+        with open('database/names.txt') as f:
+            line = f.readline()
+        x = line.split("&")
+        artist, song = x[0], x[1]
+        with open('database/styles.txt') as f:
+            line = f.readline()
+        x = line.split("&")
+        style1, style2, content = x[0], x[1], x[2]
 
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)

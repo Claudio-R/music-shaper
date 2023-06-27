@@ -56,7 +56,7 @@ def process_array_choices():
 @app.route('/video')
 def get_video():
     print("sono entrato in get_video")
-    video_path = './AI/Video/Test.mp4'
+    video_path = './AI/Video/Music_cut.mp4'
 
     while not os.path.exists(video_path):
         # Attendi 1 secondo prima di riprovare

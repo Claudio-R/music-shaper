@@ -4,7 +4,7 @@ from server.server import app
 @app.route('/execute_script', methods=['POST'])
 def execute_script():
     print("sono entrato in execute_script")
-    generate_clip("", "")
+    generate_clip(None)
 
 class MusicShaper():
     def __init__(self) -> None:
