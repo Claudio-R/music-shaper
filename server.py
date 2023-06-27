@@ -89,11 +89,11 @@ def process_array_choices():
 @app.route('/execute_script', methods=['POST'])
 def execute_script():
     try:
+        generate_clip(None)
         response = jsonify({
-            'message': 'Generating clip...',
+            'message': 'Clip generated successfully',
             'status': 200,
             })
-        generate_clip(None)
     except Exception as e:
         print(e)
         response = jsonify({
@@ -108,7 +108,7 @@ def execute_script():
 def get_video():
     video_path = 'AI/Video/Music_cut.mp4'
     while not os.path.exists(video_path):
-        print("Path does not exist")
+        print("Path to video does not exist")
         time.sleep(10)
 
     try:

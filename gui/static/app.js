@@ -3,7 +3,6 @@
 const playPauseBtn = document.querySelector(".playPauseBtn");
 const progress = document.querySelector(".progress");
 const progressBar = document.querySelector(".progress__filled");
-const player = document.querySelector(".player");
 
 function togglePlay() {
     if (videoContainer.paused || videoContainer.ended) {

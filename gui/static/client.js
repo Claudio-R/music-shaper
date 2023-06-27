@@ -1,6 +1,4 @@
 const videoContainer = document.querySelector(".video-container");
-const playPauseBtn = document.querySelector(".playPauseBtn");
-const progress = document.querySelector(".progress");
 const player = document.querySelector(".player");
 var xhr = new XMLHttpRequest();
 var xhr_styles = new XMLHttpRequest();
@@ -57,7 +55,7 @@ function storeStyleContent() {
 function runClipGeneration() {
     fetch('/execute_script', {method: 'POST'}).then((response, error) => {
         if (response.status === 200) {
-            console.log(response.message)
+            console.log("Script executed successfully");
         } else {
             throw new Error('Something went wrong on api server!\n', error);
         }
