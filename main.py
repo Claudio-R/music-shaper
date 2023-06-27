@@ -5,6 +5,7 @@ from server.server import app
 def execute_script():
     print("sono entrato in execute_script")
     generate_clip(None)
+    return "ok"
 
 class MusicShaper():
     def __init__(self) -> None:

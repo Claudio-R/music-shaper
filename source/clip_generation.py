@@ -783,7 +783,7 @@ def generate_clip(config):
             line = f.readline()
         x = line.split("&")
         artist, song = x[0], x[1]
-        with open('database/styles.txt') as f:
+        with open('database/style.txt') as f:
             line = f.readline()
         x = line.split("&")
         style1, style2, content = x[0], x[1], x[2]
