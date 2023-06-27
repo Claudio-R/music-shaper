@@ -1,11 +1,22 @@
 from source.clip_generation import generate_clip
-from server.server import app
+from server import app
+from flask import jsonify
 
 @app.route('/execute_script', methods=['POST'])
 def execute_script():
     print("sono entrato in execute_script")
-    generate_clip(None)
-    return "ok"
+    try:
+        generate_clip(None)
+        return jsonify({
+            'message': 'Script eseguito correttamente',
+            'status': 200
+            })
+    except Exception as e:
+        print(e)
+        return jsonify({
+            'message': 'Errore durante l\'esecuzione dello script',
+            'status': 500
+            })
 
 class MusicShaper():
     def __init__(self) -> None:

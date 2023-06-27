@@ -68,13 +68,11 @@ function getVideo() {
   console.log("sono entrato in getVideo()");
     fetch('/video').then(function (response) {    
       if (response.ok) {
-        console.log("ho ricevuto il video")
         return response.blob();
       }
       throw new Error('Errore nella richiesta del video');
 
     }).then(function (videoBlob) {
-    console.log("ho creato il blob del video")
     var videoURL = URL.createObjectURL(videoBlob);
 
     var source_1 = document.createElement("source");
@@ -89,12 +87,7 @@ function getVideo() {
     source_2.src = videoURL;
     source_2.type = "video/webm";
 
-    document.getElementsByClassName("spinner")[0].remove();
-
-    //document.getElementsByClassName("source")[0].src = videoURL;
-    //document.getElementsByClassName("source")[1].src = videoURL;
-    //videoElement.src = videoURL;
-    
+    document.getElementsByClassName("spinner")[0].remove();    
   })
   .catch(function(error) {
     console.log(error);
@@ -124,11 +117,10 @@ function jump(e) {
   videoContainer.currentTime = position;
 }
 
-// funzione onclick menu a tendina
 function myFunction() {
   document.getElementById("myDropdown").classList.toggle("show");
 }
-// quando l'utente clicca fuori dal menu, questo si chiude
+
 window.onclick = function(event) {
   if (!event.target.matches('.dropbtn')) {
     var dropdowns = document.getElementsByClassName("dropdown-content");
@@ -154,15 +146,8 @@ progress.addEventListener("mousedown", () => (mousedown = true));
 progress.addEventListener("mousemove", (e) => mousedown && jump(e));
 progress.addEventListener("mouseup", () => (mousedown = false));
 
-
-//https://ftp.f1nalboss.de/data/imgly/videoplayer/testvid.mp4
-//https://drive.google.com/uc?id=1-0JpOsS9Od5pgl5G_wei2hzhrKNpHw8N
-
-
 function eseguiScript() {
   console.log("sono entrato in eseguiScript()");
-  //getVideo();
-  
   try {
     const response = fetch('/execute_script', {
       method: 'POST',
@@ -174,15 +159,10 @@ function eseguiScript() {
 
     if (response.ok) {
       const result = response.json();
-      // Gestisci il risultato dell'esecuzione dello script qui
-      //getVideo();
     } else {
-      // Gestisci l'errore della richiesta HTTP
       console.error('Errore nella richiesta:', response.status);
-      //getVideo();
     }
   } catch (error) {
-    // Gestisci gli errori di rete o altre eccezioni
     console.error('Errore:', error);
   }
 };

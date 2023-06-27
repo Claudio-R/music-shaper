@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <!--<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">-->
         <title>Music Shaper</title>
-        <link rel="stylesheet" href="/static/style.css"/>
+        <link rel="stylesheet" href="gui/static/style.css"/>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     </head>
@@ -26,6 +26,7 @@
 
           <div>
             <button type="button" class = "button" id="submit-button" onclick="storeNames(); storeStyles(); eseguiScript()">Submit</button>
+            <button type="button" class="button" id="get-video" onclick="getVideo()">Get Video</button>
           </div>
         </div>        
         
