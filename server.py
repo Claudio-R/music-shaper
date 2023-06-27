@@ -88,14 +88,12 @@ def process_array_choices():
 
 @app.route('/execute_script', methods=['POST'])
 def execute_script():
-    print("sono entrato in execute_script")
-    
     try:
-        generate_clip(None)
         response = jsonify({
-            'message': 'Clip generated successfully',
+            'message': 'Generating clip...',
             'status': 200,
             })
+        generate_clip(None)
     except Exception as e:
         print(e)
         response = jsonify({

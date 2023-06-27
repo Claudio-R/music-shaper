@@ -1,4 +1,5 @@
-const videoContainer = document.querySelector(".video-container");
+//NOTE - VideoContainer has been already defined
+// const videoContainer = document.querySelector(".video-container");
 const playPauseBtn = document.querySelector(".playPauseBtn");
 const progress = document.querySelector(".progress");
 const progressBar = document.querySelector(".progress__filled");
