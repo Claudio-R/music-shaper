@@ -5,53 +5,6 @@ var xhr_styles = new XMLHttpRequest();
 let choises = [];
 let count = false;
 
-// function storeArtistSong() {
-//     bottomMenuChoice = document.getElementById("artist").value;
-//     topMenuChoice = document.getElementById("song").value;
-
-//     choises = [bottomMenuChoice, topMenuChoice];
-    
-//     xhr.open('POST', '/process_artist_song');
-//     xhr.setRequestHeader('Content-Type', 'application/json');
-
-//     xhr.onload = function () {
-//         if (xhr.status === 200) {
-//             var response = JSON.parse(xhr.responseText);
-//             console.log(response.message);
-//         }
-//     };
-
-//     xhr.send(JSON.stringify({ "arrayData": choises }));
-
-//     if (count == false) {
-//         let spinner = document.createElement("div");
-//         spinner.classList.add("spinner");
-//         player.appendChild(spinner);
-//         count = true;
-//     }
-
-// }
-
-// function storeStyleContent() { 
-//     style1_choice = document.getElementsByClassName('select-selected')[0].innerHTML;
-//     style2_choice = document.getElementsByClassName('select-selected')[1].innerHTML;
-//     content_choice = document.getElementsByClassName('select-selected')[2].innerHTML;
-
-//     style_content = [style1_choice, style2_choice, content_choice];
-  
-//     xhr_styles.open('POST', '/process_style_content');
-//     xhr_styles.setRequestHeader('Content-Type', 'application/json');
-
-//     xhr_styles.onload = function() {
-//         if (xhr_styles.status === 200) {
-//             var response = JSON.parse(xhr_styles.responseText);
-//             console.log(response.message);
-//         }
-//     };
-
-//     xhr_styles.send(JSON.stringify({ "arrayDataChoices": style_content }));
-// }
-
 function submit() {
     if (count == false) {
         let spinner = document.createElement("div");
@@ -80,7 +33,16 @@ function submit() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(config)
-    })
+    }).then((response, error) => {
+        if (response.status === 200) {
+            console.log(response.message);
+        } else {
+            throw new Error('Something went wrong on api server!');
+        }
+    }
+    ).catch((error) => {
+        console.log(error);
+    });
 };
 
 function getVideo() {

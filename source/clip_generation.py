@@ -781,21 +781,21 @@ def add_audio():
 #ANCHOR - Main
 def generate_clip(config):
     global artist, song, style1, style2, content
-    if config != None:
-        artist = config["artist"]
-        song = config["song"]
-        style1 = config["style1"]
-        style2 = config["style2"]
-        content = config["content"]
-    else:
-        with open('database/names.txt') as f:
-            line = f.readline()
-        x = line.split("&")
-        artist, song = x[0], x[1]
-        with open('database/style.txt') as f:
-            line = f.readline()
-        x = line.split("&")
-        style1, style2, content = x[0], x[1], x[2]
+    # if config != None:
+    artist = config["artist"]
+    song = config["song"]
+    style1 = config["style1"]
+    style2 = config["style2"]
+    content = config["content"]
+    # else:
+    #     with open('database/names.txt') as f:
+    #         line = f.readline()
+    #     x = line.split("&")
+    #     artist, song = x[0], x[1]
+    #     with open('database/style.txt') as f:
+    #         line = f.readline()
+    #     x = line.split("&")
+    #     style1, style2, content = x[0], x[1], x[2]
 
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
