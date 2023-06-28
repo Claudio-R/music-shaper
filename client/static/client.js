@@ -58,6 +58,16 @@ function getVideo() {
 
         //TODO - remove old video
 
+        if (document.getElementsByClassName("source")[0] != undefined) {
+            var source_1 = document.getElementsByClassName("source")[0];
+            videoContainer.removeChild(source_1);
+        }
+
+        if (document.getElementsByClassName("source")[1] != undefined) {
+            var source_2 = document.getElementsByClassName("source")[1];
+            videoContainer.removeChild(source_2);
+        }
+        
         var source_1 = document.createElement("source");
         source_1.classList.add("source");
         videoContainer.appendChild(source_1);

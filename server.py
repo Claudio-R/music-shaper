@@ -25,7 +25,6 @@ except FileNotFoundError:
 app = Flask(__name__, template_folder='client/template', static_folder='client/static')
 run_with_ngrok(app)
 
-
 @app.route("/")
 
 @app.route('/home')
