@@ -768,7 +768,7 @@ def add_audio():
     ]
     
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+    _, stderr = process.communicate()
     if process.returncode != 0:
         print(stderr)
         raise RuntimeError(stderr)

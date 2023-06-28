@@ -36,6 +36,7 @@ function submit() {
     }).then((response, error) => {
         if (response.status === 200) {
             console.log(response.message);
+            getVideo();
         } else {
             throw new Error('Something went wrong on api server!');
         }
