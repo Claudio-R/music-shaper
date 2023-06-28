@@ -18,13 +18,25 @@ function submit() {
     style1 = document.getElementsByClassName('select-selected')[0].innerHTML;
     style2 = document.getElementsByClassName('select-selected')[1].innerHTML;
     content = document.getElementsByClassName('select-selected')[2].innerHTML;
+    startTime = document.getElementById("startTime").value;
+    endTime = document.getElementById("endTime").value;
+    minZoom = document.getElementById("minZoom").value;
+    maxZoom = document.getElementById("maxZoom").value;
+    minAngle = document.getElementById("minAngle").value;
+    maxAngle = document.getElementById("maxAngle").value;
 
     config = {
         "artist": artist,
         "song": song,
         "style1": style1,
         "style2": style2,
-        "content": content
+        "content": content,
+        "startTime": startTime,
+        "endTime": endTime,
+        "minZoom": minZoom,
+        "maxZoom": maxZoom,
+        "minAngle": minAngle,
+        "maxAngle": maxAngle
     }
     
     fetch('/submit', {
@@ -54,31 +66,18 @@ function getVideo() {
             throw new Error('Something went wrong on api server!\n', error);
         }
     }).then(function (videoBlob) {
-        var videoURL = URL.createObjectURL(videoBlob);
-
-        //TODO - remove old video
-
+        const videoURL = URL.createObjectURL(videoBlob);
+        document.getElementById("video").style.display = "block";
+        let source;
         if (document.getElementsByClassName("source")[0] != undefined) {
-            var source_1 = document.getElementsByClassName("source")[0];
-            videoContainer.removeChild(source_1);
+            source = document.getElementsByClassName("source")[0];
+        } else {
+            source = document.createElement("source");
+            source.classList.add("source");
+            videoContainer.appendChild(source);
         }
-
-        if (document.getElementsByClassName("source")[1] != undefined) {
-            var source_2 = document.getElementsByClassName("source")[1];
-            videoContainer.removeChild(source_2);
-        }
-        
-        var source_1 = document.createElement("source");
-        source_1.classList.add("source");
-        videoContainer.appendChild(source_1);
-        source_1.src = videoURL;
-        source_1.type = "video/mp4";
-
-        var source_2 = document.createElement("source");
-        source_2.classList.add("source");
-        videoContainer.appendChild(source_2);
-        source_2.src = videoURL;
-        source_2.type = "video/webm";
+        source.src = videoURL;
+        source.type = "video/mp4";
 
         if (count == true) {
             let spinner = document.getElementsByClassName("spinner")[0];

@@ -1,6 +1,6 @@
 from flask.templating import render_template
 from flask import Flask, request, jsonify, send_file
-import os, time, yaml, multiprocessing
+import os, time, yaml
 from flask_ngrok import run_with_ngrok
 from source.clip_generation import generate_clip
 
@@ -13,7 +13,7 @@ try:
         except yaml.YAMLError as exc:
             print(exc)
 except FileNotFoundError:
-    input("Insert a valid env.local.yml file and press enter...")
+    input("Insert a valid env.local.yml file and press enter...\n")
     with open('env.local.yml') as f:
         try:
             env = yaml.load(f, Loader=yaml.FullLoader)

@@ -92,6 +92,12 @@ song = ""
 style1 = ""
 style2 = ""
 content = ""
+start_time_sec = 10
+end_time_sec = 20
+min_zoom = 0.1
+max_zoom = 1.0
+min_angle = 0.0
+max_angle = 10.0
 
 outPath = ""
 image_path = ""
@@ -109,8 +115,6 @@ debug_text_processing = True #@param {type:"boolean"}
 remove_meaningless_text = True #@param {type:"boolean"}
 remove_repeated_sentences = True #@param {type:"boolean"}
 specify_time_interval = True #@param {type:"boolean"}
-start_time_sec = 50 #@param {type:"number"}
-end_time_sec = 55 #@param {type:"number"}
 min_words_count_in_sentence = 10 #@param {type:"number"}
 
 #ANCHOR - Prompts
@@ -221,20 +225,23 @@ def specify_intervals(textTimingArrayOriginal):
 
     maxLength = len(textTimingArrayOriginal)
     if specify_time_interval:
+
         start_index = 0
         curItem = textTimingArrayOriginal[start_index]
-
         while start_index < maxLength and float(curItem[0]) < start_time_sec:
             start_index += 1
             curItem = textTimingArrayOriginal[start_index]
+
         end_index = maxLength - 1
         curItem = textTimingArrayOriginal[end_index]
-
         while end_index >=0 and float(curItem[0]) > end_time_sec:
             end_index -= 1
             curItem = textTimingArrayOriginal[end_index]
 
-        assert start_index <= end_index, f"Error: start index > end index! Check the algorithm"
+        # assert start_index <= end_index, print(f"Error: start index > end index! start: {start_index} - end: {end_index}")
+        if start_index > end_index:
+            print(f"Error: start index > end index! start: {start_index} - end: {end_index}")
+            start_index, end_index = end_index, start_index
 
         textTimingArray = textTimingArrayOriginal[start_index:end_index+1]
 
@@ -300,11 +307,11 @@ def get_moods():
     moods = mood_prediction.predict(artist, song)
     return moods
 
-def get_zoom_angle():
+def get_zoom_angle(min_zoom, max_zoom, min_angle, max_angle):
     global artist, song, outPath, fps
     tempo, ts = spotify_api.get_tempo_ts(artist, song)
-    zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
-    angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
+    zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts, min_zoom, max_zoom)
+    angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts, min_angle, max_angle)
     print("zoom_librosa: ", zoom_librosa)
     print("angles_librosa: ", angles_librosa)
     return zoom_librosa, angles_librosa
@@ -318,7 +325,7 @@ def chat_with_chatgpt(prompt):
             except yaml.YAMLError as exc:
                 print(exc)
     except FileNotFoundError:
-        input("Insert a valid env.local.yml file and press enter...")
+        input("Insert a valid env.local.yml file and press enter...\n")
         with open("env.local.yml", 'r') as stream:
             try:
                 credentials = yaml.safe_load(stream)
@@ -422,11 +429,11 @@ def DeforumAnimArgs(frames_array):
     border = 'wrap' #@param ['wrap', 'replicate'] {type:'string'}
     if(specify_time_interval):
         max_frames = int((end_time_sec - start_time_sec)*fps)
-    #@markdown ####**Motion Parameters:**
-    zoom, angle = get_zoom_angle()
+
+    zoom, angle = get_zoom_angle(min_zoom, max_zoom, min_angle, max_angle)
     translation_x = "0:(0)"#@param {type:"string"}
     translation_y = "0:(0)"#@param {type:"string"}
-    translation_z = "0:(1)"#@param {type:"string"}
+    translation_z = "0:(10)"#@param {type:"string"}
     rotation_3d_x = "0:(0)"#@param {type:"string"}
     rotation_3d_y = "0:(0)"#@param {type:"string"}
     rotation_3d_z = "0:(0)"#@param {type:"string"}
@@ -472,15 +479,12 @@ def DeforumAnimArgs(frames_array):
     save_depth_maps = False #@param {type:"boolean"}
 
     #@markdown ####**Video Input:**
-    #video_init_path ='/content/video_in.mp4'#@param {type:"string"}
     video_init_path =''#@param {type:"string"}
     extract_nth_frame = 1#@param {type:"number"}
     overwrite_extracted_frames = True #@param {type:"boolean"}
     use_mask_video = False #@param {type:"boolean"}
-    #video_mask_path ='/content/video_in.mp4'#@param {type:"string"}
     video_mask_path =''#@param {type:"string"}
 
-    #@markdown ####**Hybrid Video for 2D/3D Animation Mode:**
     hybrid_generate_inputframes = False # {type:"boolean"}
     hybrid_use_first_frame_as_init_image = True # {type:"boolean"}
     hybrid_motion = "None" # ['None','Optical Flow','Perspective','Affine']
@@ -493,7 +497,6 @@ def DeforumAnimArgs(frames_array):
     hybrid_comp_mask_auto_contrast = False # {type:"boolean"}
     hybrid_comp_save_extra_frames = False # {type:"boolean"}
     hybrid_use_video_as_mse_image = False # {type:"boolean"}
-
 
     #@markdown ####**Interpolation:**
     interpolate_key_frames = True #@param {type:"boolean"}
@@ -781,22 +784,21 @@ def add_audio():
 #ANCHOR - Main
 def generate_clip(config):
     global artist, song, style1, style2, content
-    # if config != None:
+    global start_time_sec, end_time_sec, min_angle, max_angle, min_zoom, max_zoom
+
     artist = config["artist"]
     song = config["song"]
     style1 = config["style1"]
     style2 = config["style2"]
     content = config["content"]
-    # else:
-    #     with open('database/names.txt') as f:
-    #         line = f.readline()
-    #     x = line.split("&")
-    #     artist, song = x[0], x[1]
-    #     with open('database/style.txt') as f:
-    #         line = f.readline()
-    #     x = line.split("&")
-    #     style1, style2, content = x[0], x[1], x[2]
 
+    start_time_sec = float(config["start_time_sec"])
+    end_time_sec = float(config["end_time_sec"])
+    min_angle = float(config["min_angle"])
+    max_angle = float(config["max_angle"])
+    min_zoom = float(config["min_zoom"])
+    max_zoom = float(config["max_zoom"])
+    
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
     generate_frames(animation_prompts, frames_array)

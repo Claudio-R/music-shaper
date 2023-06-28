@@ -13,7 +13,7 @@ try:
         except yaml.YAMLError as exc:
             print(exc)
 except FileNotFoundError:
-    input("Insert a valid env.local.yml file and press enter...")
+    input("Insert a valid env.local.yml file and press enter...\n")
     with open("env.local.yml", 'r') as stream:
         try:
             credentials = yaml.safe_load(stream)

@@ -3,7 +3,6 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <!--<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">-->
         <title>Music Shaper</title>
         <link rel="stylesheet" href="/static/style.css"/>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
@@ -24,14 +23,45 @@
                 <input type="text" id="artist" placeholder="Insert Artist's Name">
             </div>
 
+            <div class="label">
+                <label for="startTime"></label>
+                <input type="text" id="startTime" placeholder="Insert Start Second">
+            </div>
+    
+            <div class="label">
+                <label for="endTime"></label>
+                <input type="text" id="endTime" placeholder="Insert End Second">
+            </div>
+
+            <div class="label">
+                <label for="minZoom"></label>
+                <input type="text" id="minZoom" placeholder="Insert Minimum Zoom">
+            </div>
+
+            <div class="label">
+                <label for="maxZoom"></label>
+                <input type="text" id="maxZoom" placeholder="Insert Maximum Zoom">
+            </div>
+
+            <div class="label">
+                <label for="minAngle"></label>
+                <input type="text" id="minAngle" placeholder="Insert Minimum Angle">
+            </div>
+
+            <div class="label">
+                <label for="maxZoom"></label>
+                <input type="text" id="maxAngle" placeholder="Insert Maximum Angle">
+            </div>
+
+            <div class="label">
+                <label for="endTime"></label>
+                <input type="text" id="endTime" placeholder="Insert End Second">
+            </div>
+
             <div>
                 <button type="button" class = "button" id="submit-button" 
-                    onclick="submit()">
+                    onclick="submit(); storeTimes()">
                     Submit
-                </button>
-                <button type="button" class="button" id="get-video"
-                    onclick="getVideo()">
-                    Get Video
                 </button>
             </div>
         </div>        
