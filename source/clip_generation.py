@@ -109,8 +109,8 @@ debug_text_processing = True #@param {type:"boolean"}
 remove_meaningless_text = True #@param {type:"boolean"}
 remove_repeated_sentences = True #@param {type:"boolean"}
 specify_time_interval = True #@param {type:"boolean"}
-start_time_sec = 51 #@param {type:"number"}
-end_time_sec = 76 #@param {type:"number"}
+start_time_sec = 50 #@param {type:"number"}
+end_time_sec = 55 #@param {type:"number"}
 min_words_count_in_sentence = 10 #@param {type:"number"}
 
 #ANCHOR - Prompts

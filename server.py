@@ -86,14 +86,18 @@ def process_array_choices():
     print(response)
     return response      
 
-@app.route('/execute_script', methods=['POST'])
+@app.route('/submit', methods=['POST'])
 def execute_script():
     try:
-        generate_clip(None)
+        config = request.get_json()
+        print(config)
+        generate_clip(config)
         response = jsonify({
             'message': 'Clip generated successfully',
             'status': 200,
             })
+        video_path = 'AI/Video/Music_cut.mp4'
+        return send_file(video_path, mimetype='video/mp4')
     except Exception as e:
         print(e)
         response = jsonify({

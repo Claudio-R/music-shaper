@@ -1,6 +1,7 @@
 from source.clip_generation import generate_clip
 from server import app
 
+#TODO - Fondere le due post createClip e get video
 class MusicShaper():
     def __init__(self) -> None:
         pass
