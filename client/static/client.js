@@ -34,9 +34,9 @@ function submit() {
         },
         body: JSON.stringify(config)
     }).then((response, error) => {
+        getVideo();
         if (response.status === 200) {
             console.log(response.message);
-            getVideo();
         } else {
             throw new Error('Something went wrong on api server!');
         }
@@ -55,6 +55,8 @@ function getVideo() {
         }
     }).then(function (videoBlob) {
         var videoURL = URL.createObjectURL(videoBlob);
+
+        //TODO - remove old video
 
         var source_1 = document.createElement("source");
         source_1.classList.add("source");

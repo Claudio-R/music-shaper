@@ -32,6 +32,7 @@ run_with_ngrok(app)
 def home():
     return render_template('home.html')
 
+#NOTE - This exceeds fetch request timeout limit so it should be moved to a different process maybe
 @app.route('/submit', methods=['POST'])
 def execute_script():
     try:
@@ -42,7 +43,7 @@ def execute_script():
         #     'message': 'Generating clip...',
         #     'status': 200,
         #     })
-        generate_clip(config)
+        generate_clip(config) 
         response = jsonify({
             'message': 'Clip generated',
             'status': 200
