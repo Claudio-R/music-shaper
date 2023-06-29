@@ -31,12 +31,12 @@ function submit() {
         "style1": style1,
         "style2": style2,
         "content": content,
-        "startTime": startTime,
-        "endTime": endTime,
-        "minZoom": minZoom,
-        "maxZoom": maxZoom,
-        "minAngle": minAngle,
-        "maxAngle": maxAngle
+        "start_time_sec": startTime,
+        "end_time_sec": endTime,
+        "min_zoom": minZoom,
+        "max_zoom": maxZoom,
+        "min_angle": minAngle,
+        "max_angle": maxAngle
     }
     
     fetch('/submit', {

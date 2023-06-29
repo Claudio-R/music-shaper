@@ -36,12 +36,6 @@ def home():
 def execute_script():
     try:
         config = request.get_json()
-        # process = multiprocessing.Process(target=generate_clip, args=(config,))
-        # process.start()
-        # response = jsonify({
-        #     'message': 'Generating clip...',
-        #     'status': 200,
-        #     })
         generate_clip(config) 
         response = jsonify({
             'message': 'Clip generated',

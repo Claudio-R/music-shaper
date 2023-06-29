@@ -791,13 +791,12 @@ def generate_clip(config):
     style1 = config["style1"]
     style2 = config["style2"]
     content = config["content"]
-
     start_time_sec = float(config["start_time_sec"])
     end_time_sec = float(config["end_time_sec"])
-    min_angle = float(config["min_angle"])
-    max_angle = float(config["max_angle"])
     min_zoom = float(config["min_zoom"])
     max_zoom = float(config["max_zoom"])
+    min_angle = float(config["min_angle"])
+    max_angle = float(config["max_angle"])
     
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
