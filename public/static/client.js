@@ -1,5 +1,5 @@
-const videoContainer = document.querySelector(".video-container");
-const player = document.querySelector(".player");
+const videoContainer = document.getElementById("video-container");
+const player = document.getElementById("video-player");
 var xhr = new XMLHttpRequest();
 var xhr_styles = new XMLHttpRequest();
 let choises = [];
