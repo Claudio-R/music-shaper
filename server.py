@@ -22,7 +22,7 @@ except FileNotFoundError:
         except yaml.YAMLError as exc:
             print(exc)
 
-app = Flask(__name__, template_folder='client/template', static_folder='client/static')
+app = Flask(__name__, template_folder='public/template', static_folder='public/static')
 run_with_ngrok(app)
 
 @app.route("/")

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Music Shaper</title>
+        <link rel="stylesheet" href="/static/style.css"/>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    </head>
+    <body>
+
+        <div class="row-container">
+
+            <!-- FIRST ROW -->
+            <div class="row" style="height: 15%; flex-direction: column;">
+                <img id="logo" src="/static/gui_logo.jpg" alt="MUSIC SHAPER">
+            </div>
+            
+            <!-- SECOND ROW  -->
+            <div class="row" style="height: 70%; flex-direction: row;">    
+                <!-- FIRST COLUMN: Labels -->
+                <div class="col" style="width: 15%;">
+                    <div class="container" style="background-color: #333; height: fit-content;">
+                        <input class="elem" type="text" id="song" placeholder="Insert Song's Title">
+                        <input class="elem" type="text" id="artist" placeholder="Insert Artist's Name">
+                        <input class="elem" type="number" id="startTime" placeholder="Insert Start Second">
+                        <input class="elem" type="number" id="endTime" placeholder="Insert End Second">
+                        <input class="elem" type="number" id="minZoom" placeholder="Insert Minimum Zoom">
+                        <input class="elem" type="number" id="maxZoom" placeholder="Insert Maximum Zoom">
+                        <input class="elem" type="number" id="minAngle" placeholder="Insert Minimum Angle">
+                        <input class="elem" type="number" id="maxAngle" placeholder="Insert Maximum Angle">
+                    </div>
+                </div>
+                
+                <!-- SECOND COLUMN: Player -->
+                <div class="col" style="width: 60%;">
+                    <div id="frame">DESCRIZIONE
+                    <div class="player">                        
+                        <video class="container">
+                            <p>No HTML5 Video is Supported on your Browser</p>
+                        </video>            
+                        <div class="controls">
+                            <div class="progress">
+                                <div class="progress__filled"></div>
+                            </div>
+                            <button class="controls__btn playPauseBtn" title="Toggle Play">
+                                ►
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- THIRD COLUMN: Menus -->
+                <div class="col" style="width: 15%;">
+                    <div class="container">
+                        <div class="menus">
+                            <select>
+                                <option value="0">Main Style</option>
+                                <option value="1">realistic</option>
+                                <option value="2">modern</option>
+                                <option value="3">cyberpunk</option>
+                                <option value="4">futuristic</option>
+                                <option value="5">surrealist</option>
+                                <option value="6">elegant</option>
+                                <option value="7">epic</option>
+                                <option value="8">dreamy</option>
+                                <option value="9">colorful</option>
+                                <option value="10">highly detailed</option>
+                                <option value="11">grainy</option>
+                                <option value="12">psychedelic</option>
+                            </select>
+                        </div>
+                        
+                        <div class="menus" >
+                            <select>
+                                <option value="0">Second Style</option>
+                                <option value="1">realistic</option>
+                                <option value="2">modern</option>
+                                <option value="3">cyberpunk</option>
+                                <option value="4">futuristic</option>
+                                <option value="5">surrealist</option>
+                                <option value="6">elegant</option>
+                                <option value="7">epic</option>
+                                <option value="8">dreamy</option>
+                                <option value="9">colorful</option>
+                                <option value="10">highly detailed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="menus">
+                            <select>
+                                <option value="0">Content</option>
+                                <option value="1">Image</option>
+                                <option value="2">Photograph</option>
+                                <option value="3">Painting</option>
+                                <option value="4">Sketch</option>
+                                <option value="5">3D render</option>
+                                <option value="6">Digital paint</option>
+                                <option value="7">Composition</option>
+                                <option value="8">Analog photo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>       
+            </div>
+
+            <!-- THIRD ROW -->
+            <div class="row" style="height: 15%;">
+                <button type="button" id="submit-button" 
+                    onclick="submit(); storeTimes()">
+                    Submit
+                </button>
+            </div> 
+        </div>
+        
+        <script src="/static/client.js"></script>
+        <script src="/static/app.js"></script>
+        <script src="/static/menus.js"></script>
+        
+    </body>
+</html>
