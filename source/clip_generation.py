@@ -38,12 +38,14 @@ def setup_environment():
 setup_environment()
 
 import torch
-from IPython import display
+# from IPython import display
 from types import SimpleNamespace
+
+# Deforum Diffusion Helpers
 from helpers.save_images import get_output_folder
 from helpers.settings import load_args
 from helpers.render import render_animation, render_input_video, render_image_batch, render_interpolation
-from helpers.model_load import make_linear_decode, load_model, get_model_output_paths
+from helpers.model_load import load_model, get_model_output_paths
 from helpers.aesthetics import load_aesthetics_model
 from helpers.prompts import Prompts
 
@@ -92,6 +94,12 @@ song = ""
 style1 = ""
 style2 = ""
 content = ""
+start_time_sec = 10
+end_time_sec = 20
+min_zoom = 0.1
+max_zoom = 1.0
+min_angle = 0.0
+max_angle = 10.0
 
 outPath = ""
 image_path = ""
@@ -109,8 +117,6 @@ debug_text_processing = True #@param {type:"boolean"}
 remove_meaningless_text = True #@param {type:"boolean"}
 remove_repeated_sentences = True #@param {type:"boolean"}
 specify_time_interval = True #@param {type:"boolean"}
-start_time_sec = 51 #@param {type:"number"}
-end_time_sec = 76 #@param {type:"number"}
 min_words_count_in_sentence = 10 #@param {type:"number"}
 
 #ANCHOR - Prompts
@@ -133,23 +139,11 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
 def get_lyrics():
     global artist, song, outPath
-    # Read from database
-    if artist == "" or song == "":
-        with open('database/names.txt') as f:
-            line = f.readline()
-        x = line.split("&")
-        artist, song = x[0], x[1]
-
-    # Get lyrics from Spotify or Youtube
-    print("Processing lyrics for artist: ", artist, " song: ", song)
     lyrics = utils.get_lyrics(artist, song)
     utils.print_lyrics(lyrics)
 
-    # Download the song from YouTube
-    video_id = youtube_api.search_song_on_yt(artist, song, needLyrics = False)
-    link = 'https://www.youtube.com/watch?v=' + video_id
     outPath = "database/YT_downloads/{}".format(artist)
-    youtube_api.download_song(link, outPath)
+    youtube_api.download_song(artist, song, outPath)
     return lyrics
 
 def is_meaningless_sentence(sentence):
@@ -159,11 +153,7 @@ def is_meaningless_sentence(sentence):
     nonWordsCount = 0
 
     for word in words:
-        #if debug_sentence_check:
-        #print(word)
         valid_word = word.lower() in dictionary
-        #if debug_sentence_check:
-        #print(valid_word)
         if valid_word:
             wordsCount += 1
         else:
@@ -227,20 +217,23 @@ def specify_intervals(textTimingArrayOriginal):
 
     maxLength = len(textTimingArrayOriginal)
     if specify_time_interval:
+
         start_index = 0
         curItem = textTimingArrayOriginal[start_index]
-
         while start_index < maxLength and float(curItem[0]) < start_time_sec:
             start_index += 1
             curItem = textTimingArrayOriginal[start_index]
+
         end_index = maxLength - 1
         curItem = textTimingArrayOriginal[end_index]
-
         while end_index >=0 and float(curItem[0]) > end_time_sec:
             end_index -= 1
             curItem = textTimingArrayOriginal[end_index]
 
-        assert start_index <= end_index, f"Error: start index > end index! Check the algorithm"
+        # assert start_index <= end_index, print(f"Error: start index > end index! start: {start_index} - end: {end_index}")
+        if start_index > end_index:
+            print(f"Error: start index > end index! start: {start_index} - end: {end_index}")
+            start_index, end_index = end_index, start_index
 
         textTimingArray = textTimingArrayOriginal[start_index:end_index+1]
 
@@ -288,7 +281,11 @@ def split_lyrics_into_sentences(textTimingArray):
     return (sentence_array, timing_array)
 
 def process_lyrics():
-    lyrics = get_lyrics()
+    try:
+        lyrics = get_lyrics()
+    except Exception as e:
+        print("Error: " + str(e))
+        raise e
     
     _, textTimingArrayOriginal = format_lyrics(lyrics)
     textTimingArray = specify_intervals(textTimingArrayOriginal)
@@ -306,34 +303,31 @@ def get_moods():
     moods = mood_prediction.predict(artist, song)
     return moods
 
-def get_zoom_angle():
+def get_zoom_angle(min_zoom, max_zoom, min_angle, max_angle):
     global artist, song, outPath, fps
     tempo, ts = spotify_api.get_tempo_ts(artist, song)
-    zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts)
-    angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts )
+    zoom_librosa = utils.get_beats_librosa_zoom(outPath + "_cut.wav", fps, tempo, ts, min_zoom, max_zoom)
+    angles_librosa = utils.get_beats_librosa_angle(outPath + "_cut.wav", fps, tempo, ts, min_angle, max_angle)
     print("zoom_librosa: ", zoom_librosa)
     print("angles_librosa: ", angles_librosa)
     return zoom_librosa, angles_librosa
 
-def get_style():
-    global style1, style2, content
-    if style1 == "" or style2 == "" or content == "":
-        with open('./database/style.txt') as f:
-            line = f.readline()
-        y = line.split("&")
-
-        style1, style2 = y[0], y[1]
-        content = y[2]
-
-    return style1, style2, content
-
 def chat_with_chatgpt(prompt):
-    with open("env.local.yml", 'r') as stream:
-        try:
-            credentials = yaml.safe_load(stream)
-            openai.api_key = credentials['OPENAI_API_KEY']
-        except yaml.YAMLError as exc:
-            print(exc)
+    try:
+        with open("env.local.yml", 'r') as stream:
+            try:
+                credentials = yaml.safe_load(stream)
+                openai.api_key = credentials['OPENAI_API_KEY']
+            except yaml.YAMLError as exc:
+                print(exc)
+    except FileNotFoundError:
+        input("Insert a valid env.local.yml file and press enter...\n")
+        with open("env.local.yml", 'r') as stream:
+            try:
+                credentials = yaml.safe_load(stream)
+                openai.api_key = credentials['OPENAI_API_KEY']
+            except yaml.YAMLError as exc:
+                print(exc)
 
     temperature = 1.0
     max_tokens = 300
@@ -351,8 +345,10 @@ def chat_with_chatgpt(prompt):
 
 def generate_prompts(sentence_array):
 
+    global style1, style2, content
+
     moods = get_moods()
-    s1, s2, c = get_style()
+    s1, s2, c = style1, style2, content
 
     if debug_generation_prompts:
         print("Desired content: ", c)
@@ -394,13 +390,13 @@ def generate_animation_prompts(sentence_array, timing_array):
 
     firstTiming = float(timing_array[0])
     for i in range(len(chatgpt_prompts)):
-        #get frames array
+        # get frames array
         curTiming = float(timing_array[i])
         if specify_time_interval:
             curTiming -= start_time_sec
 
         frames_array.append(int(curTiming*fps))
-        #do some minor text processing with prompts from chatGPT
+        # do some minor text processing with prompts from chatGPT
         chatgpt_prompts[i] = chatgpt_prompts[i].replace("\n", " ")
         chatgpt_prompts[i] = chatgpt_prompts[i].replace(".", " ")
         chatgpt_prompts[i] = chatgpt_prompts[i].replace("!", " ")
@@ -413,7 +409,8 @@ def generate_animation_prompts(sentence_array, timing_array):
         print("Frames: \n", frames_array)
         print("Animation prompts: \n", animation_prompts)
 
-    neg_prompts = {}
+    #TODO - generate negative prompts to avoid words and letters
+    neg_prompts = {"words, letters, numbers, punctuation"}
     return animation_prompts, neg_prompts, frames_array
 
 #ANCHOR - Generate Clip
@@ -429,11 +426,11 @@ def DeforumAnimArgs(frames_array):
     border = 'wrap' #@param ['wrap', 'replicate'] {type:'string'}
     if(specify_time_interval):
         max_frames = int((end_time_sec - start_time_sec)*fps)
-    #@markdown ####**Motion Parameters:**
-    zoom, angle = get_zoom_angle()
+
+    zoom, angle = get_zoom_angle(min_zoom, max_zoom, min_angle, max_angle)
     translation_x = "0:(0)"#@param {type:"string"}
     translation_y = "0:(0)"#@param {type:"string"}
-    translation_z = "0:(1)"#@param {type:"string"}
+    translation_z = "0:(10)"#@param {type:"string"}
     rotation_3d_x = "0:(0)"#@param {type:"string"}
     rotation_3d_y = "0:(0)"#@param {type:"string"}
     rotation_3d_z = "0:(0)"#@param {type:"string"}
@@ -479,15 +476,12 @@ def DeforumAnimArgs(frames_array):
     save_depth_maps = False #@param {type:"boolean"}
 
     #@markdown ####**Video Input:**
-    #video_init_path ='/content/video_in.mp4'#@param {type:"string"}
     video_init_path =''#@param {type:"string"}
     extract_nth_frame = 1#@param {type:"number"}
     overwrite_extracted_frames = True #@param {type:"boolean"}
     use_mask_video = False #@param {type:"boolean"}
-    #video_mask_path ='/content/video_in.mp4'#@param {type:"string"}
     video_mask_path =''#@param {type:"string"}
 
-    #@markdown ####**Hybrid Video for 2D/3D Animation Mode:**
     hybrid_generate_inputframes = False # {type:"boolean"}
     hybrid_use_first_frame_as_init_image = True # {type:"boolean"}
     hybrid_motion = "None" # ['None','Optical Flow','Perspective','Affine']
@@ -500,7 +494,6 @@ def DeforumAnimArgs(frames_array):
     hybrid_comp_mask_auto_contrast = False # {type:"boolean"}
     hybrid_comp_save_extra_frames = False # {type:"boolean"}
     hybrid_use_video_as_mse_image = False # {type:"boolean"}
-
 
     #@markdown ####**Interpolation:**
     interpolate_key_frames = True #@param {type:"boolean"}
@@ -725,9 +718,10 @@ def generate_frames(animation_prompts, frames_array):
             print(stderr)
             raise RuntimeError(stderr)
 
-        mp4 = open(mp4_path,'rb').read()
-        data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
-        display.display(display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
+        # display video:
+        # mp4 = open(mp4_path,'rb').read()
+        # data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
+        # display.display(display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
 
         if make_gif:
             gif_path = os.path.splitext(mp4_path)[0]+'.gif'
@@ -744,22 +738,11 @@ def generate_frames(animation_prompts, frames_array):
                 print(stderr)
                 raise RuntimeError(stderr)
         
-        # print("Done!")
-        # print("MP4: ", mp4_path)
-        # print("IMAGE: ", image_path)
-
-
 def add_audio():
-    # against some strange error we sometimes get:
-    # https://github.com/googlecolab/colabtools/issues/3409
-
-    global mp4_path, outPath
+    global artist, song, mp4_path, outPath
 
     audio_path = outPath + "_cut.wav" 
-    mp4_final_path = "AI/Video/Music_cut.mp4"
-
-    # print("Adding audio...")
-    # print("AUDIO: ", audio_path)
+    mp4_final_path = f'AI/Video/{artist}_{song}.mp4'
 
     cmd = [
         'ffmpeg',
@@ -775,7 +758,7 @@ def add_audio():
     ]
     
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+    _, stderr = process.communicate()
     if process.returncode != 0:
         print(stderr)
         raise RuntimeError(stderr)
@@ -788,13 +771,20 @@ def add_audio():
 #ANCHOR - Main
 def generate_clip(config):
     global artist, song, style1, style2, content
-    if config != None:
-        artist = config["artist"]
-        song = config["song"]
-        style1 = config["style1"]
-        style2 = config["style2"]
-        content = config["content"]
+    global start_time_sec, end_time_sec, min_angle, max_angle, min_zoom, max_zoom
 
+    artist = config["artist"]
+    song = config["song"]
+    style1 = config["style1"]
+    style2 = config["style2"]
+    content = config["content"]
+    start_time_sec = float(config["start_time_sec"])
+    end_time_sec = float(config["end_time_sec"])
+    min_zoom = float(config["min_zoom"])
+    max_zoom = float(config["max_zoom"])
+    min_angle = float(config["min_angle"])
+    max_angle = float(config["max_angle"])
+    
     sentence_array, timing_array = process_lyrics()
     animation_prompts, _, frames_array = generate_animation_prompts(sentence_array, timing_array)
     generate_frames(animation_prompts, frames_array)

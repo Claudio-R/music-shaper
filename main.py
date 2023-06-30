@@ -1,16 +1,11 @@
 from source.clip_generation import generate_clip
-from server.server import app
-
-@app.route('/execute_script', methods=['POST'])
-def execute_script():
-    print("sono entrato in execute_script")
-    generate_clip("", "")
+from server import app
 
 class MusicShaper():
     def __init__(self) -> None:
         pass
 
-    def generate_clip(self) -> None:
+    def generate_video(self) -> None:
         config = {
             'artist': input("Insert artist: "),
             'song': input("Insert song: "),

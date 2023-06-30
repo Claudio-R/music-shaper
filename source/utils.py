@@ -6,7 +6,7 @@ import numpy as np
 import random
 
 from source.spotify_api import search_lyrics_on_spotify
-from source.youtube_api import search_song_on_yt, search_lyrics_on_youtube
+from source.youtube_api import search_lyrics_on_youtube
 
 def print_lyrics(lyrics):
     print("Requested lyrics:")
@@ -23,13 +23,11 @@ def get_lyrics(artist, song):
     try:
         lyrics = search_lyrics_on_spotify(artist, song)
     except:
-        print("Exception Occurred in search_on_spotify function: The song has no lyrics or doesn't exist")
-        lyrics=[]
-
-    if not lyrics:
-        id = search_song_on_yt(artist, song)
-        lyrics = search_lyrics_on_youtube(id)
-
+        try:
+            lyrics = search_lyrics_on_youtube(artist, song)
+        except Exception as e:
+            print("No lyrics found")
+            raise e                 
     return lyrics
 
 def cutAudio(path, outPath, start, end): 
@@ -167,7 +165,7 @@ def get_onsets_angles(path, sr, norm, delta):
   
   return sd_list_n
 
-def get_beats_librosa_zoom(path, sr, tempo, ts): 
+def get_beats_librosa_zoom(path, sr, tempo, ts, min_zoom, max_zoom): 
     y, sr_x = librosa.load(path)
     tempo, beats =  librosa.beat.beat_track(y=y, sr=sr_x, bpm = tempo)
     beats_times = librosa.frames_to_time(beats)
@@ -191,7 +189,8 @@ def get_beats_librosa_zoom(path, sr, tempo, ts):
     for i in range(len(beats_ar)): 
         for b in new_beats:
             if(i == b): 
-                beats_ar[i] = random.uniform(1.0, 2.0)
+                #NOTE - MIN:MAX ZOOM
+                beats_ar[i] = random.uniform(min_zoom, max_zoom)
 
     for i in range(len(beats_ar)):
         if(i != len(beats_ar) -1  ):     
@@ -205,7 +204,7 @@ def get_beats_librosa_zoom(path, sr, tempo, ts):
     return sd_list_n
 
 
-def get_beats_librosa_angle(path, sr, tempo, ts): 
+def get_beats_librosa_angle(path, sr, tempo, ts, min_angle, max_angle): 
     y, sr_x = librosa.load(path)
     tempo, beats =  librosa.beat.beat_track(y=y, sr=sr_x, bpm = tempo)
     beats_times = librosa.frames_to_time(beats)
@@ -230,7 +229,8 @@ def get_beats_librosa_angle(path, sr, tempo, ts):
     for i in range(len(beats_ar)): 
         for b in new_beats:
             if(i == b): 
-                beats_ar[i] = random.randint(-30, 30)
+                #NOTE - MIN:MAX ANGLE
+                beats_ar[i] = random.randint(min_angle, max_angle)
     
     for i in range(len(beats_ar)) :
         if(i != len(beats_ar) -1  ): 
