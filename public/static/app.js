@@ -1,8 +1,7 @@
-//NOTE - VideoContainer has been already defined
-// const videoContainer = document.querySelector(".video-container");
+const videoContainer = document.getElementById("video-container");
 const playPauseBtn = document.querySelector(".playPauseBtn");
-const progress = document.querySelector(".progress");
-const progressBar = document.querySelector(".progress__filled");
+const progress = document.getElementById("progress_bar");
+const progressBar = document.getElementById("progress_bar_filled");
 
 function togglePlay() {
     if (videoContainer.paused || videoContainer.ended) {
@@ -24,23 +23,6 @@ function handleProgress() {
 function jump(e) {
     const position = (e.offsetX / progress.offsetWidth) * videoContainer.duration;
     videoContainer.currentTime = position;
-}
-
-function myFunction() {
-    document.getElementById("myDropdown").classList.toggle("show");
-}
-
-window.onclick = function(event) {
-    if (!event.target.matches('.dropbtn')) {
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        var i;
-        for (i = 0; i < dropdowns.length; i++) {
-            var openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-            }
-        }
-    }
 }
 
 playPauseBtn.addEventListener("click", togglePlay);

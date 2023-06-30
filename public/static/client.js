@@ -1,4 +1,3 @@
-const videoContainer = document.getElementById("video-container");
 const player = document.getElementById("video-player");
 var xhr = new XMLHttpRequest();
 var xhr_styles = new XMLHttpRequest();
@@ -7,6 +6,8 @@ let count = false;
 
 function submit() {
     if (count == false) {
+        document.getElementById("description-container").style.display = "none";
+        player.style.display = "block";
         let spinner = document.createElement("div");
         spinner.classList.add("spinner");
         player.appendChild(spinner);
@@ -38,26 +39,21 @@ function submit() {
         "min_angle": minAngle,
         "max_angle": maxAngle
     }
-    
+
     fetch('/submit', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(config)
-    }).then((response, error) => {
+    }).then(() => {
         getVideo();
-        if (response.status === 200) {
-            console.log(response.message);
-        } else {
-            throw new Error('Something went wrong on api server!');
-        }
-    }
-    ).catch((error) => {
+    }).catch((error) => {
         console.log(error);
     });
 };
 
+//TODO - MUST BE FIXED
 function getVideo() {
     fetch('/get_video').then((response, error) => {    
         if (response.status === 200) {
@@ -67,15 +63,16 @@ function getVideo() {
         }
     }).then(function (videoBlob) {
         const videoURL = URL.createObjectURL(videoBlob);
-        document.getElementById("video").style.display = "block";
+
         let source;
         if (document.getElementsByClassName("source")[0] != undefined) {
             source = document.getElementsByClassName("source")[0];
         } else {
             source = document.createElement("source");
             source.classList.add("source");
-            videoContainer.appendChild(source);
+            document.getElementById("video-container").appendChild(source);
         }
+
         source.src = videoURL;
         source.type = "video/mp4";
 
