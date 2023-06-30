@@ -96,7 +96,11 @@ def search_for_song_id(artist_name, song_name):
         return None
 
     print("Retrieved song from Spotify:")
-    print("Artist(s): ", json_result["tracks"]["items"][0]["artists"]["name"])
+    
+    print("Artist(s):")
+    for item in json_result["tracks"]["items"][0]["artists"]:
+        print(item["name"])
+
     print("Title:", json_result["tracks"]["items"][0]["name"])
     print("ID:", json_result["tracks"]["items"][0]["id"])
 
