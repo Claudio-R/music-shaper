@@ -39,18 +39,21 @@ function submit() {
         "min_angle": minAngle,
         "max_angle": maxAngle
     }
-
-    fetch('/submit', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(config)
-    }).then(() => {
-        getVideo();
-    }).catch((error) => {
+    try {
+        fetch('/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(config)
+        }).then(() => {
+            getVideo();
+        }).catch((error) => {
+            console.log(error);
+        });
+    } catch (error) {
         console.log(error);
-    });
+    }
 };
 
 //TODO - MUST BE FIXED
