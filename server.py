@@ -4,6 +4,9 @@ import os, time, yaml
 from flask_ngrok import run_with_ngrok
 from source.clip_generation import generate_clip
 
+artist = ""
+song = ""
+
 try:
     with open('env.local.yml') as f:
         try:
@@ -34,8 +37,11 @@ def home():
 #NOTE - This exceeds fetch request timeout limit so it should be moved to a different process maybe
 @app.route('/submit', methods=['POST'])
 def execute_script():
+    global artist, song
     try:
         config = request.get_json()
+        artist = config['artist']
+        song = config['song']
         generate_clip(config) 
         response = jsonify({
             'message': 'Clip generated',
@@ -53,7 +59,8 @@ def execute_script():
 
 @app.route('/get_video')
 def get_video():
-    video_path = 'AI/Video/Music_cut.mp4'
+    global artist, song
+    video_path = f'AI/Video/{artist}_{song}.mp4'
     while not os.path.exists(video_path):
         time.sleep(15)
     try:

@@ -20,16 +20,14 @@ except FileNotFoundError:
 
 def search_song_on_yt(artist, title, needLyrics = True):
     # The query to search for on YouTube
-    query = artist + " " + title + " lyrics"
+    query = artist + "+" + title + "+lyrics"
     captionsArg = ""
-    print(query)
 
     # The URL to search for videoms on YouTube
     if needLyrics:
         captionsArg = "&videoCaption=closedCaption"
 
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video{captionsArg}&key={youtube_api_key}"
-    print("URL: ", url)
 
     # Perform the search
     response = requests.get(url).json()

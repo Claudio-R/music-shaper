@@ -38,12 +38,12 @@ def setup_environment():
 setup_environment()
 
 import torch
-from IPython import display
+# from IPython import display
 from types import SimpleNamespace
 from helpers.save_images import get_output_folder
 from helpers.settings import load_args
 from helpers.render import render_animation, render_input_video, render_image_batch, render_interpolation
-from helpers.model_load import make_linear_decode, load_model, get_model_output_paths
+from helpers.model_load import load_model, get_model_output_paths
 from helpers.aesthetics import load_aesthetics_model
 from helpers.prompts import Prompts
 
@@ -144,7 +144,7 @@ def get_lyrics():
     utils.print_lyrics(lyrics)
 
     # Download the song from YouTube
-    video_id = youtube_api.search_song_on_yt(artist, song, needLyrics = False)
+    video_id = youtube_api.search_song_on_yt(artist, song, needLyrics=False)
     link = 'https://www.youtube.com/watch?v=' + video_id
     outPath = "database/YT_downloads/{}".format(artist)
     youtube_api.download_song(link, outPath)
@@ -157,11 +157,7 @@ def is_meaningless_sentence(sentence):
     nonWordsCount = 0
 
     for word in words:
-        #if debug_sentence_check:
-        #print(word)
         valid_word = word.lower() in dictionary
-        #if debug_sentence_check:
-        #print(valid_word)
         if valid_word:
             wordsCount += 1
         else:
@@ -721,9 +717,10 @@ def generate_frames(animation_prompts, frames_array):
             print(stderr)
             raise RuntimeError(stderr)
 
-        mp4 = open(mp4_path,'rb').read()
-        data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
-        display.display(display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
+        # display video:
+        # mp4 = open(mp4_path,'rb').read()
+        # data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
+        # display.display(display.HTML(f'<video controls loop><source src="{data_url}" type="video/mp4"></video>') )
 
         if make_gif:
             gif_path = os.path.splitext(mp4_path)[0]+'.gif'
@@ -740,22 +737,11 @@ def generate_frames(animation_prompts, frames_array):
                 print(stderr)
                 raise RuntimeError(stderr)
         
-        # print("Done!")
-        # print("MP4: ", mp4_path)
-        # print("IMAGE: ", image_path)
-
-
 def add_audio():
-    # against some strange error we sometimes get:
-    # https://github.com/googlecolab/colabtools/issues/3409
-
-    global mp4_path, outPath
+    global artist, song, mp4_path, outPath
 
     audio_path = outPath + "_cut.wav" 
-    mp4_final_path = "AI/Video/Music_cut.mp4"
-
-    # print("Adding audio...")
-    # print("AUDIO: ", audio_path)
+    mp4_final_path = f'AI/Video/{artist}_{song}.mp4'
 
     cmd = [
         'ffmpeg',
