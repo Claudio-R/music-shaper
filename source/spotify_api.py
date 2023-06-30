@@ -85,20 +85,21 @@ def search_for_song_id(artist_name, song_name):
     headers = get_auth_header(token)
     full = song_name +" "+artist_name
     query = f"?q={full}&type=track&limit=1"
-    #limit= 1 : gives only the first result ! 
+
     query_url = url + query
     result = get(query_url, headers = headers)
     json_result = json.loads(result.content)
-    #Printing the artists 
-    print("Artist(s):")
-    for item in json_result["tracks"]["items"][0]["artists"]:
-        print(item["name"])
-    print("Title:")
-    print(json_result["tracks"]["items"][0]["name"])
-    print("Is it what you were looking for?")
+
+    
     if len(json_result) == 0: 
-        print("No artist with this name exists")
+        print("Cannot find song")
         return None
+
+    print("Retrieved song from Spotify:")
+    print("Artist(s): ", json_result["tracks"]["items"][0]["artists"]["name"])
+    print("Title:", json_result["tracks"]["items"][0]["name"])
+    print("ID:", json_result["tracks"]["items"][0]["id"])
+
     return json_result["tracks"]["items"][0]["id"]
 
 
@@ -160,18 +161,18 @@ def search_for_artist(artist_name):
     return json_result[0]
 
 def search_lyrics_on_spotify(artist, song): 
-    print("id printing inside search_on_spotify function")
-    id = search_for_song_id(artist, song)
-    print(id)
-    lrc= sp_dc.get_lyrics(id)
-    if lrc==None:
-        raise Exception("The song has no lyrics or doesn't exist")
-    lyrics = []
+    print("\nSearching for lyrics on spotify...")
+    try:
+        id = search_for_song_id(artist, song)
+        spotify_lyrics = sp_dc.get_lyrics(id)
+    except Exception as e:
+        print("No lyrics found on spotify")
+        raise e
 
-    for line in range(len(lrc["lyrics"]['lines'])): 
-        time = int(lrc["lyrics"]['lines'][line]['startTimeMs'])/1000.0
-        words = lrc["lyrics"]['lines'][line]['words']
-        lyrics.append({'text' : words, 'start' : str(time) })
+    lyrics = []
+    for line in spotify_lyrics['lyrics']['lines']:
+        lyrics.append({'text' : line['words'], 'start' : str(line['startTimeMs']/1000.0) })
+    print("Lyrics found on Spotify!")
     return lyrics
 
 if __name__=='__main__':

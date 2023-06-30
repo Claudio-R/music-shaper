@@ -80,6 +80,8 @@ function getVideo() {
         }
         
         let video = document.getElementById("video-container");
+        video.style.backgroundColor = "black";
+        video.style.zIndex = "0";
         video.addEventListener("click", togglePlay);
         video.addEventListener("play", updatePlayBtn);
         video.addEventListener("pause", updatePlayBtn);

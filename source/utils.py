@@ -6,7 +6,7 @@ import numpy as np
 import random
 
 from source.spotify_api import search_lyrics_on_spotify
-from source.youtube_api import search_song_on_yt, search_lyrics_on_youtube
+from source.youtube_api import search_lyrics_on_youtube
 
 def print_lyrics(lyrics):
     print("Requested lyrics:")
@@ -23,13 +23,11 @@ def get_lyrics(artist, song):
     try:
         lyrics = search_lyrics_on_spotify(artist, song)
     except:
-        print("Exception Occurred in search_on_spotify function: The song has no lyrics or doesn't exist")
-        lyrics=[]
-
-    if not lyrics:
-        id = search_song_on_yt(artist, song)
-        lyrics = search_lyrics_on_youtube(id)
-
+        try:
+            lyrics = search_lyrics_on_youtube(artist, song)
+        except Exception as e:
+            print("No lyrics found")
+            raise e                 
     return lyrics
 
 def cutAudio(path, outPath, start, end): 

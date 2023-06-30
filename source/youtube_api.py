@@ -18,7 +18,7 @@ except FileNotFoundError:
         except yaml.YAMLError as exc:
             print(exc)
 
-def search_song_on_yt(artist, title, needLyrics = True):
+def search_song_on_yt(artist, title, needLyrics=False):
     # The query to search for on YouTube
     query = artist + "+" + title + "+lyrics"
     captionsArg = ""
@@ -42,22 +42,27 @@ def search_song_on_yt(artist, title, needLyrics = True):
     video_channel = video["snippet"]["channelTitle"]
 
     # Print the video information
+    print("Song found on YouTube!")
     print("Video ID:", video_id)
     print("Title:", video_title)
     print("Channel:", video_channel)
 
     return video_id
 
-def search_lyrics_on_youtube(yt_video_id):
-    lyrics = ""
+def search_lyrics_on_youtube(artist, song):
+    print("Searching for lyrics on YouTube...")
     try:
-        lyrics = YouTubeTranscriptApi.get_transcript(yt_video_id, languages=['en', 'en-US'])
+        id = search_song_on_yt(artist, song, True)
+        lyrics = YouTubeTranscriptApi.get_transcript(id, languages=['en', 'en-US'])
     except Exception as e:
-        print(f"Error: {e}")
-
+        print("No lyrics found on YouTube")
+        raise e
     return lyrics
 
-def download_song(url, outPath):
+# def download_song(url, outPath):
+def download_song(artist, song, outPath):
+    id = search_song_on_yt(artist, song)
+    url = 'https://www.youtube.com/watch?v=' + id
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': outPath,
@@ -72,8 +77,6 @@ def download_song(url, outPath):
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.cache.remove()
             ydl.download([url])
-            return True
     except Exception as e:
-        print(e)
-        return False 
-
+        print("Error downloading song from YouTube")
+        raise e

@@ -40,6 +40,8 @@ setup_environment()
 import torch
 # from IPython import display
 from types import SimpleNamespace
+
+# Deforum Diffusion Helpers
 from helpers.save_images import get_output_folder
 from helpers.settings import load_args
 from helpers.render import render_animation, render_input_video, render_image_batch, render_interpolation
@@ -137,17 +139,11 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
 def get_lyrics():
     global artist, song, outPath
-
-    # Get lyrics from Spotify or Youtube
-    print("Processing lyrics for artist: ", artist, " song: ", song)
     lyrics = utils.get_lyrics(artist, song)
     utils.print_lyrics(lyrics)
 
-    # Download the song from YouTube
-    video_id = youtube_api.search_song_on_yt(artist, song, needLyrics=False)
-    link = 'https://www.youtube.com/watch?v=' + video_id
     outPath = "database/YT_downloads/{}".format(artist)
-    youtube_api.download_song(link, outPath)
+    youtube_api.download_song(artist, song, outPath)
     return lyrics
 
 def is_meaningless_sentence(sentence):
@@ -285,7 +281,11 @@ def split_lyrics_into_sentences(textTimingArray):
     return (sentence_array, timing_array)
 
 def process_lyrics():
-    lyrics = get_lyrics()
+    try:
+        lyrics = get_lyrics()
+    except Exception as e:
+        print("Error: " + str(e))
+        raise e
     
     _, textTimingArrayOriginal = format_lyrics(lyrics)
     textTimingArray = specify_intervals(textTimingArrayOriginal)
@@ -409,7 +409,8 @@ def generate_animation_prompts(sentence_array, timing_array):
         print("Frames: \n", frames_array)
         print("Animation prompts: \n", animation_prompts)
 
-    neg_prompts = {}
+    #TODO - generate negative prompts to avoid words and letters
+    neg_prompts = {"words, letters, numbers, punctuation"}
     return animation_prompts, neg_prompts, frames_array
 
 #ANCHOR - Generate Clip
