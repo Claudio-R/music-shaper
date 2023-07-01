@@ -139,11 +139,11 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
 def get_lyrics():
     global artist, song, outPath
-    lyrics = utils.get_lyrics(artist, song)
+    id, lyrics = utils.get_lyrics(artist, song)
     utils.print_lyrics(lyrics)
 
     outPath = "database/YT_downloads/{}".format(artist)
-    youtube_api.download_song(artist, song, outPath)
+    youtube_api.download_song(artist, song, outPath, id)
     return lyrics
 
 def is_meaningless_sentence(sentence):

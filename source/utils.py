@@ -20,15 +20,16 @@ def import_lyrics_from_file():
     return ""
 
 def get_lyrics(artist, song):
+    id = ""
     try:
         lyrics = search_lyrics_on_spotify(artist, song)
     except:
         try:
-            lyrics = search_lyrics_on_youtube(artist, song)
+            id, lyrics = search_lyrics_on_youtube(artist, song)
         except Exception as e:
             print("No lyrics found")
             raise e                 
-    return lyrics
+    return (id, lyrics)
 
 def cutAudio(path, outPath, start, end): 
     y, sr = librosa.load(path)
