@@ -205,8 +205,8 @@ def format_lyrics(lyrics):
                 continue
 
         currentText = item["text"]
-        fullText = fullText + item["text"] + " ";
-        textTimingArrayOriginal.append([str(item["start"]), item["text"]]);
+        fullText = fullText + item["text"] + " "
+        textTimingArrayOriginal.append([str(item["start"]), item["text"]])
 
     fullText = fullText[:-1]
     return fullText, textTimingArrayOriginal
@@ -416,7 +416,6 @@ def generate_animation_prompts(sentence_array, timing_array):
     return animation_prompts, neg_prompts, frames_array
 
 #ANCHOR - Generate Clip
-
 def DeforumAnimArgs(frames_array):
 
     global specify_time_interval, end_time_sec, start_time_sec, fps
