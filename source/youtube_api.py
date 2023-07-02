@@ -52,12 +52,13 @@ def search_lyrics_on_youtube(artist, song):
     except Exception as e:
         print("No lyrics found on YouTube")
         raise e
-    return lyrics
+    return (id, lyrics)
 
 # def download_song(url, outPath):
-def download_song(artist, song, outPath):
+def download_song(artist, song, outPath, id=""):
     print("Trying to download song from Youtube...")
-    id = search_song_on_yt(artist, song)
+    if not id:
+        id = search_song_on_yt(artist, song)
     url = 'https://www.youtube.com/watch?v=' + id
     ydl_opts = {
         'format': 'bestaudio/best',

@@ -140,8 +140,8 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 def get_lyrics():
     global artist, song, outPath
     outPath = "audio/{}".format(artist)
-    youtube_api.download_song(artist, song, outPath)
-    lyrics = utils.get_lyrics(artist, song)
+    id, lyrics = utils.get_lyrics(artist, song)
+    youtube_api.download_song(artist, song, outPath, id)
     utils.print_lyrics(lyrics)
 
     return lyrics
