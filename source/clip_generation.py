@@ -139,10 +139,8 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
 def get_lyrics():
     global artist, song, outPath
-    
-    outPath = "database/YT_downloads/{}".format(artist)
+    outPath = "audio/{}".format(artist)
     youtube_api.download_song(artist, song, outPath)
-
     lyrics = utils.get_lyrics(artist, song)
     utils.print_lyrics(lyrics)
 
@@ -243,7 +241,7 @@ def specify_intervals(textTimingArrayOriginal):
         textTimingArray = textTimingArrayOriginal
 
     if specify_time_interval:
-        outPath = "database/YT_downloads/{}".format(artist)
+        outPath = "audio/{}".format(artist)
         utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
 
     return textTimingArray

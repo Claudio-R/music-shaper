@@ -11,7 +11,6 @@ try:
             client_id = credentials['CLIENT_ID']
             client_secret = credentials['CLIENT_SECRET']
             sp_dc = credentials['SP_DC']
-            sp = Spotify(sp_dc)
         except yaml.YAMLError as exc:
             print(exc)
 except FileNotFoundError:
@@ -81,11 +80,12 @@ def search_for_song_id(artist_name, song_name):
     else:
         print("Song found on spotify!")
 
+    sp_ID = json_result["tracks"]["items"][0]["id"]
     print("Artist(s): ", json_result["tracks"]["items"][0]["artists"][0]["name"])
     print("Title:", json_result["tracks"]["items"][0]["name"])
-    print("Spotify ID:", json_result["tracks"]["items"][0]["id"])
+    print("Spotify ID:", sp_ID)
 
-    return json_result["tracks"]["items"][0]["id"]
+    return sp_ID
 
 
 def search_for_songitems(artist_name, song_name):
@@ -148,13 +148,18 @@ def search_for_artist(artist_name):
 def search_lyrics_on_spotify(artist, song): 
     print("\nSearching for lyrics on spotify...")
     id = search_for_song_id(artist, song)
+    sp = Spotify(sp_dc)
+    
+    print("Retrieving lyrics...")
     spotify_lyrics = sp.get_lyrics(id)
     lyrics = []
+
     for line in range(len(spotify_lyrics["lyrics"]['lines'])): 
         time = int(spotify_lyrics["lyrics"]['lines'][line]['startTimeMs'])/1000.0
         words = spotify_lyrics["lyrics"]['lines'][line]['words']
         lyrics.append({'text' : words, 'start' : str(time) })
     print("My lyrics:", lyrics)
+    
     return lyrics
 
 if __name__=='__main__':
