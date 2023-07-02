@@ -19,29 +19,24 @@ except FileNotFoundError:
             print(exc)
 
 def search_song_on_yt(artist, title, needLyrics=False):
-    # The query to search for on YouTube
     query = artist + "+" + title + "+lyrics"
     captionsArg = ""
-
-    # The URL to search for videoms on YouTube
     if needLyrics:
         captionsArg = "&videoCaption=closedCaption"
 
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video{captionsArg}&key={youtube_api_key}"
 
-    # Perform the search
-    response = requests.get(url).json()
+    try:
+        response = requests.get(url).json()
+    except Exception as e:
+        print("Error searching for song on YouTube")
+        raise e
 
-    #print(response)
-    # Get the first video from the search results
     video = response["items"][0]
-
-    # Get the video information
     video_id = video["id"]["videoId"]
     video_title = video["snippet"]["title"]
     video_channel = video["snippet"]["channelTitle"]
 
-    # Print the video information
     print("Song found on YouTube!")
     print("Video ID:", video_id)
     print("Title:", video_title)
@@ -61,6 +56,7 @@ def search_lyrics_on_youtube(artist, song):
 
 # def download_song(url, outPath):
 def download_song(artist, song, outPath, id=""):
+    print("Trying to download song from Youtube...")
     if not id:
         id = search_song_on_yt(artist, song)
     url = 'https://www.youtube.com/watch?v=' + id

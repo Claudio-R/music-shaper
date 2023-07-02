@@ -2,6 +2,7 @@ import base64
 from requests import post, get
 import yaml
 import json
+from syrics.api import Spotify
 
 try:
     with open("env.local.yml", 'r') as stream:
@@ -43,23 +44,6 @@ def get_spotify_token() -> str:
 def get_auth_header(token): 
     return{'Authorization': f'Bearer {token}'}
 
-def search_for_song_id(artist_name, song_name):
-    url = 'https://api.spotify.com/v1/search'
-
-    token = get_spotify_token()
-    headers = get_auth_header(token)
-    full = f'{song_name} {artist_name}'
-    query = f'?q={full}&type=track&limit=1'
-    
-    query_url = url + query
-    result = get(query_url, headers = headers)
-    json_result = json.loads(result.content)
-    if len(json_result) == 0: 
-        print("No artist with this name exists")
-        return None
-    song_ID = json_result["tracks"]["items"][0]["id"]
-    return song_ID
-
 def get_audio_features_given_song_id(id): 
     url = f"https://api.spotify.com/v1/audio-features/{id}"
     token = get_spotify_token()
@@ -88,23 +72,20 @@ def search_for_song_id(artist_name, song_name):
 
     query_url = url + query
     result = get(query_url, headers = headers)
+
     json_result = json.loads(result.content)
 
-    
-    if len(json_result) == 0: 
-        print("Cannot find song")
-        return None
+    if len(json_result) == 0:
+        raise Exception("Cannot find song")
+    else:
+        print("Song found on spotify!")
 
-    print("Retrieved song from Spotify:")
-    
-    print("Artist(s):")
-    for item in json_result["tracks"]["items"][0]["artists"]:
-        print(item["name"])
-
+    sp_ID = json_result["tracks"]["items"][0]["id"]
+    print("Artist(s): ", json_result["tracks"]["items"][0]["artists"][0]["name"])
     print("Title:", json_result["tracks"]["items"][0]["name"])
-    print("ID:", json_result["tracks"]["items"][0]["id"])
+    print("Spotify ID:", sp_ID)
 
-    return json_result["tracks"]["items"][0]["id"]
+    return sp_ID
 
 
 def search_for_songitems(artist_name, song_name):
@@ -166,17 +147,19 @@ def search_for_artist(artist_name):
 
 def search_lyrics_on_spotify(artist, song): 
     print("\nSearching for lyrics on spotify...")
-    try:
-        id = search_for_song_id(artist, song)
-        spotify_lyrics = sp_dc.get_lyrics(id)
-    except Exception as e:
-        print("No lyrics found on spotify")
-        raise e
-
+    id = search_for_song_id(artist, song)
+    sp = Spotify(sp_dc)
+    
+    print("Retrieving lyrics...")
+    spotify_lyrics = sp.get_lyrics(id)
     lyrics = []
-    for line in spotify_lyrics['lyrics']['lines']:
-        lyrics.append({'text' : line['words'], 'start' : str(line['startTimeMs']/1000.0) })
-    print("Lyrics found on Spotify!")
+
+    for line in range(len(spotify_lyrics["lyrics"]['lines'])): 
+        time = int(spotify_lyrics["lyrics"]['lines'][line]['startTimeMs'])/1000.0
+        words = spotify_lyrics["lyrics"]['lines'][line]['words']
+        lyrics.append({'text' : words, 'start' : str(time) })
+    print("My lyrics:", lyrics)
+    
     return lyrics
 
 if __name__=='__main__':

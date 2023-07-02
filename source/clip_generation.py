@@ -139,11 +139,11 @@ path_name_modifier = "x0_pred" #@param ["x0_pred","x"]
 
 def get_lyrics():
     global artist, song, outPath
+    outPath = "audio/{}".format(artist)
     id, lyrics = utils.get_lyrics(artist, song)
+    youtube_api.download_song(artist, song, outPath, id)
     utils.print_lyrics(lyrics)
 
-    outPath = "database/YT_downloads/{}".format(artist)
-    youtube_api.download_song(artist, song, outPath, id)
     return lyrics
 
 def is_meaningless_sentence(sentence):
@@ -203,8 +203,8 @@ def format_lyrics(lyrics):
                 continue
 
         currentText = item["text"]
-        fullText = fullText + item["text"] + " ";
-        textTimingArrayOriginal.append([str(item["start"]), item["text"]]);
+        fullText = fullText + item["text"] + " "
+        textTimingArrayOriginal.append([str(item["start"]), item["text"]])
 
     fullText = fullText[:-1]
     return fullText, textTimingArrayOriginal
@@ -241,7 +241,7 @@ def specify_intervals(textTimingArrayOriginal):
         textTimingArray = textTimingArrayOriginal
 
     if specify_time_interval:
-        outPath = "database/YT_downloads/{}".format(artist)
+        outPath = "audio/{}".format(artist)
         utils.cutAudio(outPath + ".wav", outPath + "_cut.wav", start_time_sec, end_time_sec)
 
     return textTimingArray
@@ -414,7 +414,6 @@ def generate_animation_prompts(sentence_array, timing_array):
     return animation_prompts, neg_prompts, frames_array
 
 #ANCHOR - Generate Clip
-
 def DeforumAnimArgs(frames_array):
 
     global specify_time_interval, end_time_sec, start_time_sec, fps
