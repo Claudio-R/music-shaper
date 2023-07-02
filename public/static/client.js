@@ -106,7 +106,7 @@ function getVideo() {
 }
 
 function togglePlay() {
-    let videoContainer = document.getElementById("video-container");
+    var videoContainer = document.getElementById("video-container");
     if (videoContainer.paused || videoContainer.ended) {
         videoContainer.play();
     } else {
@@ -115,18 +115,18 @@ function togglePlay() {
 }
 
 function updatePlayBtn() {
-    let videoContainer = document.getElementById("video-container");
+    var videoContainer = document.getElementById("video-container");
     playPauseBtn.innerHTML = videoContainer.paused ? "►" : "❚❚";
 }
 
 function handleProgress() {
-    let videoContainer = document.getElementById("video-container");
+    var videoContainer = document.getElementById("video-container");
     const progressPercentage = (videoContainer.currentTime / videoContainer.duration) * 100;
     progressBar.style.flexBasis = `${progressPercentage}%`;
 }
 
 function jump(e) {
-    let videoContainer = document.getElementById("video-container");
+    var videoContainer = document.getElementById("video-container");
     const position = (e.offsetX / progress.offsetWidth) * videoContainer.duration;
     videoContainer.currentTime = position;
 }
@@ -134,11 +134,10 @@ function jump(e) {
 const playPauseBtn = document.querySelector(".playPauseBtn");
 playPauseBtn.addEventListener("click", togglePlay);
 
-const videoContainer = document.getElementById("video-container");
-videoContainer.addEventListener("click", togglePlay);
-videoContainer.addEventListener("play", updatePlayBtn);
-videoContainer.addEventListener("pause", updatePlayBtn);
-videoContainer.addEventListener("timeupdate", handleProgress);
+document.getElementById("video-container").addEventListener("click", togglePlay);
+document.getElementById("video-container").addEventListener("play", updatePlayBtn);
+document.getElementById("video-container").addEventListener("pause", updatePlayBtn);
+document.getElementById("video-container").addEventListener("timeupdate", handleProgress);
 
 let mousedown = false;
 progress.addEventListener("click", jump);
